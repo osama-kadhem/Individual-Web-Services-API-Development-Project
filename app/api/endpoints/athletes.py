@@ -35,3 +35,31 @@ def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return athlete
+
+
+@router.put("/{athlete_id}", response_model=schemas.Athlete)
+def update_athlete(athlete_id: int, athlete_update: schemas.AthleteUpdate, db: Session = Depends(get_db)):
+    """Update an athlete"""
+    db_athlete = db.query(models.Athlete).filter(models.Athlete.id == athlete_id).first()
+    if not db_athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+    
+    update_data = athlete_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_athlete, key, value)
+    
+    db.commit()
+    db.refresh(db_athlete)
+    return db_athlete
+
+
+@router.delete("/{athlete_id}", status_code=204)
+def delete_athlete(athlete_id: int, db: Session = Depends(get_db)):
+    """Delete an athlete"""
+    db_athlete = db.query(models.Athlete).filter(models.Athlete.id == athlete_id).first()
+    if not db_athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+    
+    db.delete(db_athlete)
+    db.commit()
+    return None

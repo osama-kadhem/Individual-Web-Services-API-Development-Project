@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.endpoints import athletes
+from app.api.api_v1.api import api_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -9,26 +9,22 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Phase 1: Basic REST API for athlete management",
+    description="IronMind Coach API - Data-driven Triathlon Training Insights",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# Phase 1: Include only athletes router
-app.include_router(
-    athletes.router,
-    prefix=f"{settings.API_V1_STR}/athletes",
-    tags=["Athletes"]
-)
+# Include API Router
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
 def root():
     """Root endpoint"""
     return {
-        "message": "IronMind Coach API - Phase 1",
+        "message": f"Welcome to {settings.PROJECT_NAME}",
         "version": settings.VERSION,
-        "phase": "Phase 1: Basic Setup",
+        "phase": "Phase 2: Complete CRUD & Core Entities",
         "docs": "/docs"
     }
 
@@ -36,4 +32,4 @@ def root():
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "phase": "1"}
+    return {"status": "healthy", "phase": "2"}

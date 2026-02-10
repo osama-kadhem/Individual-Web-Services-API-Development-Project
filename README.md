@@ -6,7 +6,7 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 
 ## 📋 Development Phases
 
-### **Phase 1: Basic Project Setup** ✅ CURRENT
+### **Phase 1: Basic Project Setup** ✅ COMPLETE
 
 **Goal**: Establish foundation with basic athlete management
 
@@ -19,32 +19,24 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 - ✅ Basic test suite (5 tests)
 - ✅ Auto-generated API documentation (Swagger/ReDoc)
 
-**Endpoints**:
-- `POST /api/v1/athletes/` - Create athlete
-- `GET /api/v1/athletes/` - List all athletes
-- `GET /api/v1/athletes/{id}` - Get athlete by ID
-
-**Deliverables**:
-- Working API with database persistence
-- Basic validation and error handling
-- Passing tests
-- Setup documentation
-
 ---
 
-### **Phase 2: Complete CRUD & Core Entities**
+### **Phase 2: Complete CRUD & Core Entities** ✅ CURRENT
 
 **Goal**: Add full CRUD operations and expand to all core entities
 
-**Will Include**:
-- ⏳ Complete Athletes CRUD (add Update, Delete)
-- ⏳ Sessions entity (sport, duration, distance, intensity, date)
-- ⏳ Sleep Logs entity (date, hours, quality)
-- ⏳ Check-ins entity (readiness score, fatigue, stress, soreness)
-- ⏳ Database relationships between entities
-- ⏳ Expanded test coverage (15+ tests)
+**Includes**:
+- ✅ Complete Athletes CRUD (add Update, Delete)
+- ✅ Sessions entity (sport, duration, distance, intensity, date)
+- ✅ Sleep Logs entity (date, hours, quality)
+- ✅ Check-ins entity (readiness score, fatigue, stress, soreness)
+- ✅ Database relationships between entities
+- ✅ Expanded test coverage (16 tests)
 
-**New Endpoints**:
+**Endpoints**:
+- `GET /api/v1/athletes/` - List all athletes
+- `POST /api/v1/athletes/` - Create athlete
+- `GET /api/v1/athletes/{id}` - Get athlete by ID
 - `PUT /api/v1/athletes/{id}` - Update athlete
 - `DELETE /api/v1/athletes/{id}` - Delete athlete
 - Full CRUD for `/api/v1/sessions/`
@@ -236,29 +228,31 @@ pytest tests/ -v
 
 ## 📊 Current Status
 
-**Phase**: 1 of 5  
-**Status**: ✅ Complete  
-**Tests**: 5/5 passing  
-**Endpoints**: 3 working  
-**Entities**: 1 (Athletes)
+**Phase**: 2 of 5  
+**Status**: ✅ Phase 2 Complete  
+**Tests**: 16/16 passing  
+**Endpoints**: 18 working  
+**Entities**: 4 (Athletes, Sessions, SleepLogs, Check-ins)
 
 ---
 
 ## 🔜 Next Steps
 
-To move to **Phase 2**, the following will be added:
-- Update and Delete operations for Athletes
-- Sessions, Sleep Logs, and Check-ins entities
-- Database relationships
-- Expanded test coverage
+To move to **Phase 3**, the following will be added:
+- Pagination on all list endpoints (skip/limit)
+- Advanced filtering for sessions, sleep, and check-ins
+- Sorting capabilities
+- Query parameter validation
+- CORS middleware
 
 ---
 
 ## 📖 Additional Documentation
 
-- `PHASE_1_COMPLETE.md` - Detailed Phase 1 completion summary
+- `PHASE_1_COMPLETE.md` - Detailed Phase 1 summary
+- `PHASE_2_COMPLETE.md` - Detailed Phase 2 summary
 - API docs available at `/docs` when server is running
 
 ---
 
-**Current Phase**: Phase 1 - Basic Setup ✅
+**Current Phase**: Phase 2 - Complete CRUD & Core Entities ✅
