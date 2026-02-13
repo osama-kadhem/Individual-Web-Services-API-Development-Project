@@ -1,68 +1,67 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app.core.database import get_db
-from app.models import models, schemas
+from datetime import datetime
+from app.db.session import get_db
+from app.schemas.session import Session, SessionCreate, SessionUpdate
+from app.crud import crud_session, crud_athlete
 
 router = APIRouter()
 
 
-@router.post("/", response_model=schemas.Session, status_code=201)
-def create_session(session: schemas.SessionCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=Session, status_code=201)
+def create_session(session: SessionCreate, db: Session = Depends(get_db)):
     """Create a new training session"""
-    # Verify athlete exists
-    athlete = db.query(models.Athlete).filter(models.Athlete.id == session.athlete_id).first()
+    athlete = crud_athlete.get_athlete(db, athlete_id=session.athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-    
-    db_session = models.Session(**session.model_dump())
-    db.add(db_session)
-    db.commit()
-    db.refresh(db_session)
-    return db_session
+    return crud_session.create_session(db=db, session=session)
 
 
-@router.get("/", response_model=List[schemas.Session])
-def list_sessions(athlete_id: int = None, db: Session = Depends(get_db)):
-    """List training sessions, optionally filtered by athlete_id"""
-    query = db.query(models.Session)
-    if athlete_id:
-        query = query.filter(models.Session.athlete_id == athlete_id)
-    return query.all()
+@router.get("/", response_model=List[Session])
+def list_sessions(
+    athlete_id: int = None, 
+    sport: str = None,
+    start_date: datetime = None,
+    end_date: datetime = None,
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db)
+):
+    """List training sessions with advanced filtering and pagination"""
+    return crud_session.get_sessions(
+        db, 
+        athlete_id=athlete_id, 
+        sport=sport, 
+        start_date=start_date, 
+        end_date=end_date, 
+        skip=skip, 
+        limit=limit
+    )
 
 
-@router.get("/{session_id}", response_model=schemas.Session)
+@router.get("/{session_id}", response_model=Session)
 def get_session(session_id: int, db: Session = Depends(get_db)):
     """Get a specific session by ID"""
-    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    db_session = crud_session.get_session(db, session_id=session_id)
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
     return db_session
 
 
-@router.put("/{session_id}", response_model=schemas.Session)
-def update_session(session_id: int, session_update: schemas.SessionUpdate, db: Session = Depends(get_db)):
+@router.put("/{session_id}", response_model=Session)
+def update_session(session_id: int, session_update: SessionUpdate, db: Session = Depends(get_db)):
     """Update a training session"""
-    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    db_session = crud_session.update_session(db=db, session_id=session_id, session_update=session_update)
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    update_data = session_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_session, key, value)
-    
-    db.commit()
-    db.refresh(db_session)
     return db_session
 
 
 @router.delete("/{session_id}", status_code=204)
 def delete_session(session_id: int, db: Session = Depends(get_db)):
     """Delete a training session"""
-    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
-    if not db_session:
+    success = crud_session.delete_session(db=db, session_id=session_id)
+    if not success:
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    db.delete(db_session)
-    db.commit()
     return None

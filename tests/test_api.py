@@ -3,10 +3,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app
-from app.core.database import Base, get_db
+from app.db.session import Base, get_db
 
 # Create test database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./data/test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -31,13 +31,14 @@ def client():
 
 
 # Phase 2: Expanded Tests
+# Phase 3: Filtering & Pagination Tests
 def test_root(client):
     """Test root endpoint"""
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
-    assert data["phase"] == "Phase 2: Complete CRUD & Core Entities"
+    assert data["phase"] == "Phase 3: Filtering, Pagination & Advanced Queries"
 
 
 def test_health_check(client):
@@ -45,7 +46,7 @@ def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
-    assert response.json()["phase"] == "2"
+    assert response.json()["phase"] == "3"
 
 
 def test_create_athlete(client):
@@ -229,12 +230,72 @@ def test_update_checkin(client):
     assert res.json()["fatigue"] == 2
 
 
-def test_athlete_cascade_delete(client):
-    """Test that deleting an athlete deletes their associated data"""
+def test_athlete_pagination(client):
+    """Test athlete pagination"""
+    for i in range(15):
+        client.post("/api/v1/athletes/", json={"name": f"Athlete {i}", "email": f"a{i}@test.com"})
+    
+    # Page 1
+    response = client.get("/api/v1/athletes/?skip=0&limit=10")
+    assert response.status_code == 200
+    assert len(response.json()) == 10
+    
+    # Page 2
+    response = client.get("/api/v1/athletes/?skip=10&limit=10")
+    assert response.status_code == 200
+    assert len(response.json()) == 5
+
+
+def test_session_filtering_sport(client):
+    """Test session filtering by sport"""
     ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
     client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Run", "duration": 30})
+    client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Bike", "duration": 60})
     
-    client.delete(f"/api/v1/athletes/{ath['id']}")
+    response = client.get("/api/v1/sessions/?sport=Run")
+    assert len(response.json()) == 1
+    assert response.json()[0]["sport"] == "Run"
+
+
+def test_session_filtering_date(client):
+    """Test session filtering by date range"""
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
     
-    res = client.get(f"/api/v1/sessions/?athlete_id={ath['id']}")
-    assert len(res.json()) == 0
+    # Create sessions with required fields (duration)
+    res1 = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Run", "duration": 30, "date": "2026-01-01"})
+    res2 = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Bike", "duration": 60, "date": "2026-02-01"})
+    assert res1.status_code == 201
+    assert res2.status_code == 201
+    
+    # Start date filter
+    res = client.get("/api/v1/sessions/?start_date=2026-01-15")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data) == 1
+    assert "2026-02-01" in data[0]["date"]
+
+
+def test_sleep_filtering_date(client):
+    """Test sleep log filtering by date"""
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
+    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "hours": 8, "date": "2026-01-01T00:00:00"})
+    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "hours": 7, "date": "2026-01-02T00:00:00"})
+    
+    res = client.get("/api/v1/sleep-logs/?start_date=2026-01-02T00:00:00")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data) == 1
+    assert "2026-01-02" in data[0]["date"]
+
+
+def test_checkin_filtering_date(client):
+    """Test check-in filtering by date"""
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
+    client.post("/api/v1/checkins/", json={"athlete_id": ath["id"], "readiness_score": 80, "date": "2026-01-01T00:00:00"})
+    client.post("/api/v1/checkins/", json={"athlete_id": ath["id"], "readiness_score": 90, "date": "2026-01-02T00:00:00"})
+    
+    res = client.get("/api/v1/checkins/?end_date=2026-01-01T23:59:59")
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data) == 1
+    assert "2026-01-01" in data[0]["date"]

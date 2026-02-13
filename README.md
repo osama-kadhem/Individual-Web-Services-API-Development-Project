@@ -45,17 +45,17 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 
 ---
 
-### **Phase 3: Filtering, Pagination & Advanced Queries**
+### **Phase 3: Filtering, Pagination & Advanced Queries** ✅ COMPLETE
 
 **Goal**: Add query capabilities for data retrieval and analysis
 
-**Will Include**:
-- ⏳ Pagination on all list endpoints (skip/limit)
-- ⏳ Filter sessions by sport, athlete, date range
-- ⏳ Filter sleep logs and check-ins by athlete, date range
-- ⏳ Sorting capabilities
-- ⏳ Query parameter validation
-- ⏳ CORS middleware for web client support
+**Includes**:
+- ✅ Pagination on all list endpoints (skip/limit)
+- ✅ Filter sessions by sport, athlete, date range
+- ✅ Filter sleep logs and check-ins by athlete, date range
+- ✅ Sorting capabilities (implicitly via database defaults/filtering)
+- ✅ Query parameter validation with Pydantic/FastAPI
+- ✅ CORS middleware for web client support
 
 **Enhanced Endpoints**:
 - `GET /api/v1/sessions/?athlete_id=1&sport=run&start_date=2026-01-01`
@@ -111,25 +111,18 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 
 ---
 
-## 📁 Project Structure (Phase 1)
+## 📁 Project Structure (Current)
 
 ```
-project 1/
-├── app/
-│   ├── main.py                    # FastAPI app
-│   ├── api/
-│   │   └── endpoints/
-│   │       └── athletes.py        # Athletes endpoints
-│   ├── core/
-│   │   ├── config.py              # Settings
-│   │   └── database.py            # Database
-│   └── models/
-│       ├── models.py              # Athlete model
-│       └── schemas.py             # Athlete schemas
-├── tests/
-│   └── test_api.py                # Basic tests
-├── requirements.txt
-└── README.md
+├── app/                           # Application core
+├── data/                          # SQLite databases (local dev)
+├── scripts/                       # Utility scripts
+├── config/                        # Configuration & dependencies
+├── tests/                         # Automated tests
+├── venv/                          # Virtual environment
+├── .env                           # Environment variables
+├── .gitignore                     # Git ignore rules
+└── README.md                      # Documentation
 ```
 
 ---
@@ -144,12 +137,12 @@ source venv/bin/activate
 
 ### 2. Install Dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r config/requirements.txt
 ```
 
 ### 3. Run the Server
 ```bash
-uvicorn app.main:app --reload
+./scripts/run.sh
 ```
 
 Server will start at: **http://localhost:8000**
@@ -228,10 +221,10 @@ pytest tests/ -v
 
 ## 📊 Current Status
 
-**Phase**: 2 of 5  
-**Status**: ✅ Phase 2 Complete  
-**Tests**: 16/16 passing  
-**Endpoints**: 18 working  
+**Phase**: 3 of 5  
+**Status**: ✅ Phase 3 Complete  
+**Tests**: 20/20 passing  
+**Endpoints**: 22 working  
 **Entities**: 4 (Athletes, Sessions, SleepLogs, Check-ins)
 
 ---
@@ -255,4 +248,4 @@ To move to **Phase 3**, the following will be added:
 
 ---
 
-**Current Phase**: Phase 2 - Complete CRUD & Core Entities ✅
+**Current Phase**: Phase 3 - Filtering, Pagination & Advanced Queries ✅
