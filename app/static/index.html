@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IronMind Coach | Performance Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">IM</div>
+                <div class="logo-text">IRONMIND</div>
+            </div>
+
+            <nav>
+                <ul class="nav-links">
+                    <li class="nav-item active" onclick="showView('dashboard')">
+                        <i class="fa-solid fa-chart-line"></i> Dashboard
+                    </li>
+                    <li class="nav-item" onclick="showView('athletes')">
+                        <i class="fa-solid fa-users"></i> Athletes
+                    </li>
+                    <li class="nav-item" onclick="showView('sessions')">
+                        <i class="fa-solid fa-person-running"></i> Sessions
+                    </li>
+                    <li class="nav-item" onclick="showView('sleep')">
+                        <i class="fa-solid fa-moon"></i> Sleep Logs
+                    </li>
+                    <li class="nav-item" onclick="showView('checkins')">
+                        <i class="fa-solid fa-clipboard-check"></i> Check-ins
+                    </li>
+                    <li class="nav-item" onclick="showView('docs')">
+                        <i class="fa-solid fa-code"></i> API Console
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <div class="page-title">
+                    <h1 id="view-title">Dashboard</h1>
+                    <p id="view-subtitle">Training overview and analytics</p>
+                </div>
+                <div class="user-profile">
+                    <span id="health-status" class="stat-trend up"><i class="fa-solid fa-circle"></i> API Online</span>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <div id="stats-section" class="stats-grid">
+                <div class="stat-card fade-in" style="animation-delay: 0.1s">
+                    <div class="stat-header">Total Athletes <i class="fa-solid fa-users"></i></div>
+                    <div class="stat-value" id="count-athletes">0</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> +0% this month</div>
+                </div>
+                <div class="stat-card fade-in" style="animation-delay: 0.2s">
+                    <div class="stat-header">Training Sessions <i class="fa-solid fa-person-running"></i></div>
+                    <div class="stat-value" id="count-sessions">0</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> +0 session today</div>
+                </div>
+                <div class="stat-card fade-in" style="animation-delay: 0.3s">
+                    <div class="stat-header">Readiness Avg <i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-value" id="avg-readiness">0%</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-bolt"></i> Goal: 85%</div>
+                </div>
+            </div>
+
+            <!-- Content Container -->
+            <div id="data-container" class="content-card fade-in">
+                <div class="card-header">
+                    <h2 id="container-title">Recent Activity</h2>
+                    <button class="btn-primary" onclick="openModal()">
+                        <i class="fa-solid fa-plus"></i> Add New
+                    </button>
+                </div>
+
+                <div id="table-wrapper">
+                    <table id="data-table">
+                        <thead>
+                            <tr id="table-headers">
+                                <!-- Dynamic Headers -->
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- API Docs Container -->
+            <div id="docs-view" class="content-card fade-in"
+                style="display: none; padding: 0; min-height: 80vh; overflow: hidden;">
+                <iframe id="docs-iframe" src="/docs" style="width: 100%; height: 80vh; border: none;"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Athlete</h2>
+                <p>Enter details below to register on the platform</p>
+            </div>
+            <form id="generic-form">
+                <div id="form-fields">
+                    <!-- Dynamic Form Fields -->
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn-primary"
+                        style="background: transparent; border: 1px solid var(--glass-border);"
+                        onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex: 1; justify-content: center;">Save
+                        Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

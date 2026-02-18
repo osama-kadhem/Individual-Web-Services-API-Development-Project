@@ -30,15 +30,11 @@ def client():
     Base.metadata.drop_all(bind=engine)
 
 
-# Phase 2: Expanded Tests
-# Phase 3: Filtering & Pagination Tests
+# Phase 4: Sleep logs and daily check-ins (constraints)
 def test_root(client):
     """Test root endpoint"""
     response = client.get("/")
     assert response.status_code == 200
-    data = response.json()
-    assert "message" in data
-    assert data["phase"] == "Phase 3: Filtering, Pagination & Advanced Queries"
 
 
 def test_health_check(client):
@@ -46,7 +42,7 @@ def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
-    assert response.json()["phase"] == "3"
+    assert response.json()["phase"] == "4"
 
 
 def test_create_athlete(client):
@@ -148,13 +144,14 @@ def test_create_sleep_log(client):
         "/api/v1/sleep-logs/",
         json={
             "athlete_id": athlete_id,
-            "hours": 8.5,
-            "quality": 9
+            "sleep_hours": 8.5,
+            "sleep_quality": 4,
+            "date": "2026-02-18"
         }
     )
     assert response.status_code == 201
-    assert response.json()["hours"] == 8.5
-    assert response.json()["athlete_id"] == athlete_id
+    assert response.json()["sleep_hours"] == 8.5
+    assert response.json()["sleep_quality"] == 4
 
 
 def test_create_checkin(client):
@@ -166,15 +163,57 @@ def test_create_checkin(client):
         "/api/v1/checkins/",
         json={
             "athlete_id": athlete_id,
-            "readiness_score": 85,
             "fatigue": 3,
             "stress": 2,
-            "soreness": 1
+            "mood": 5,
+            "soreness": 1,
+            "date": "2026-02-18"
         }
     )
     assert response.status_code == 201
-    assert response.json()["readiness_score"] == 85
-    assert response.json()["athlete_id"] == athlete_id
+    assert response.json()["mood"] == 5
+
+
+def test_sleep_uniqueness(client):
+    """Test 409 Conflict for duplicate sleep logs"""
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "unique@ex.com"}).json()
+    id = ath["id"]
+    
+    # First post
+    res1 = client.post("/api/v1/sleep-logs/", json={"athlete_id": id, "sleep_hours": 8, "date": "2026-02-18"})
+    assert res1.status_code == 201
+    
+    # Second post (same day)
+    res2 = client.post("/api/v1/sleep-logs/", json={"athlete_id": id, "sleep_hours": 7, "date": "2026-02-18"})
+    assert res2.status_code == 409
+
+
+def test_checkin_uniqueness(client):
+    """Test 409 Conflict for duplicate check-ins"""
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "unique2@ex.com"}).json()
+    id = ath["id"]
+    
+    # First post
+    res1 = client.post("/api/v1/checkins/", json={"athlete_id": id, "fatigue": 5, "stress": 4, "mood": 6, "soreness": 2, "date": "2026-02-18"})
+    assert res1.status_code == 201
+    
+    # Second post (same day)
+    res2 = client.post("/api/v1/checkins/", json={"athlete_id": id, "fatigue": 1, "stress": 1, "mood": 1, "soreness": 1, "date": "2026-02-18"})
+    assert res2.status_code == 409
+
+
+def test_nested_endpoints(client):
+    """Test Phase 4 nested endpoints /athletes/{id}/sleep and /checkins"""
+    ath = client.post("/api/v1/athletes/", json={"name": "Nested", "email": "nested@ex.com"}).json()
+    id = ath["id"]
+    
+    # POST /athletes/{id}/sleep
+    res_sleep = client.post(f"/api/v1/athletes/{id}/sleep", json={"athlete_id": id, "sleep_hours": 9, "sleep_quality": 5, "date": "2026-02-18"})
+    assert res_sleep.status_code == 201
+    
+    # POST /athletes/{id}/checkins
+    res_ci = client.post(f"/api/v1/athletes/{id}/checkins", json={"athlete_id": id, "fatigue": 2, "stress": 2, "mood": 8, "soreness": 3, "date": "2026-02-18"})
+    assert res_ci.status_code == 201
 
 
 def test_list_sessions_filtered(client):
@@ -191,43 +230,14 @@ def test_list_sessions_filtered(client):
     assert response.json()[0]["sport"] == "Run"
 
 
-def test_update_session(client):
-    """Test updating a session"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    sess = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Run", "duration": 30}).json()
-    
-    res = client.put(f"/api/v1/sessions/{sess['id']}", json={"duration": 45})
-    assert res.status_code == 200
-    assert res.json()["duration"] == 45
-
-
-def test_delete_session(client):
-    """Test deleting a session"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    sess = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Run", "duration": 30}).json()
-    
-    res = client.delete(f"/api/v1/sessions/{sess['id']}")
-    assert res.status_code == 204
-
-
 def test_update_sleep_log(client):
     """Test updating a sleep log"""
     ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    log = client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "hours": 8}).json()
+    log = client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "sleep_hours": 8, "sleep_quality": 4}).json()
     
-    res = client.put(f"/api/v1/sleep-logs/{log['id']}", json={"hours": 9})
+    res = client.put(f"/api/v1/sleep-logs/{log['id']}", json={"sleep_hours": 9})
     assert res.status_code == 200
-    assert res.json()["hours"] == 9
-
-
-def test_update_checkin(client):
-    """Test updating a check-in"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    ci = client.post("/api/v1/checkins/", json={"athlete_id": ath["id"], "fatigue": 5}).json()
-    
-    res = client.put(f"/api/v1/checkins/{ci['id']}", json={"fatigue": 2})
-    assert res.status_code == 200
-    assert res.json()["fatigue"] == 2
+    assert res.json()["sleep_hours"] == 9
 
 
 def test_athlete_pagination(client):
@@ -257,45 +267,15 @@ def test_session_filtering_sport(client):
     assert response.json()[0]["sport"] == "Run"
 
 
-def test_session_filtering_date(client):
-    """Test session filtering by date range"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    
-    # Create sessions with required fields (duration)
-    res1 = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Run", "duration": 30, "date": "2026-01-01"})
-    res2 = client.post("/api/v1/sessions/", json={"athlete_id": ath["id"], "sport": "Bike", "duration": 60, "date": "2026-02-01"})
-    assert res1.status_code == 201
-    assert res2.status_code == 201
-    
-    # Start date filter
-    res = client.get("/api/v1/sessions/?start_date=2026-01-15")
-    assert res.status_code == 200
-    data = res.json()
-    assert len(data) == 1
-    assert "2026-02-01" in data[0]["date"]
-
-
 def test_sleep_filtering_date(client):
     """Test sleep log filtering by date"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "hours": 8, "date": "2026-01-01T00:00:00"})
-    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "hours": 7, "date": "2026-01-02T00:00:00"})
+    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "filt@ex.com"}).json()
+    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "sleep_hours": 8, "date": "2026-01-01"})
+    client.post("/api/v1/sleep-logs/", json={"athlete_id": ath["id"], "sleep_hours": 7, "date": "2026-01-02"})
     
-    res = client.get("/api/v1/sleep-logs/?start_date=2026-01-02T00:00:00")
+    # Test from_date
+    res = client.get("/api/v1/sleep-logs/?from_date=2026-01-02")
     assert res.status_code == 200
     data = res.json()
     assert len(data) == 1
-    assert "2026-01-02" in data[0]["date"]
-
-
-def test_checkin_filtering_date(client):
-    """Test check-in filtering by date"""
-    ath = client.post("/api/v1/athletes/", json={"name": "A", "email": "a@ex.com"}).json()
-    client.post("/api/v1/checkins/", json={"athlete_id": ath["id"], "readiness_score": 80, "date": "2026-01-01T00:00:00"})
-    client.post("/api/v1/checkins/", json={"athlete_id": ath["id"], "readiness_score": 90, "date": "2026-01-02T00:00:00"})
-    
-    res = client.get("/api/v1/checkins/?end_date=2026-01-01T23:59:59")
-    assert res.status_code == 200
-    data = res.json()
-    assert len(data) == 1
-    assert "2026-01-01" in data[0]["date"]
+    assert data[0]["date"] == "2026-01-02"

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import date
 from app.models.models import SleepLog
 from app.schemas.sleep_log import SleepLogCreate, SleepLogUpdate
 
@@ -9,11 +9,19 @@ def get_sleep_log(db: Session, sleep_log_id: int) -> Optional[SleepLog]:
     return db.query(SleepLog).filter(SleepLog.id == sleep_log_id).first()
 
 
+def get_sleep_log_by_date(db: Session, athlete_id: int, log_date: date) -> Optional[SleepLog]:
+    """Check if a sleep log already exists for an athlete on a specific date"""
+    return db.query(SleepLog).filter(
+        SleepLog.athlete_id == athlete_id, 
+        SleepLog.date == log_date
+    ).first()
+
+
 def get_sleep_logs(
     db: Session, 
     athlete_id: Optional[int] = None, 
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     skip: int = 0, 
     limit: int = 100
 ) -> List[SleepLog]:

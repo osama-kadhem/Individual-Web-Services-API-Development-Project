@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, date
 from app.db.session import Base
 
 
@@ -36,28 +36,35 @@ class Session(Base):
 
 
 class SleepLog(Base):
-    """Sleep log entity"""
+    """Sleep log entity with unique constraint per athlete per day"""
     __tablename__ = "sleep_logs"
     
     id = Column(Integer, primary_key=True, index=True)
     athlete_id = Column(Integer, ForeignKey("athletes.id"), nullable=False)
-    date = Column(DateTime, default=datetime.utcnow)
-    hours = Column(Float, nullable=False)
-    quality = Column(Integer)  # 1-10
+    date = Column(Date, default=date.today)
+    sleep_hours = Column(Float, nullable=False)
+    sleep_quality = Column(Integer)  # 1-5
     
+    # Relationships
     athlete = relationship("Athlete", back_populates="sleep_logs")
+    
+    __table_args__ = (UniqueConstraint("athlete_id", "date", name="uq_athlete_sleep_date"),)
 
 
 class CheckIn(Base):
-    """Daily check-in entity"""
+    """Daily check-in entity with unique constraint per athlete per day"""
     __tablename__ = "checkins"
     
     id = Column(Integer, primary_key=True, index=True)
     athlete_id = Column(Integer, ForeignKey("athletes.id"), nullable=False)
-    date = Column(DateTime, default=datetime.utcnow)
-    readiness_score = Column(Integer)  # 1-100
+    date = Column(Date, default=date.today)
+    readiness_score = Column(Integer)  # Optional helper score
     fatigue = Column(Integer)  # 1-10
     stress = Column(Integer)  # 1-10
+    mood = Column(Integer)  # 1-10
     soreness = Column(Integer)  # 1-10
     
+    # Relationships
     athlete = relationship("Athlete", back_populates="checkins")
+
+    __table_args__ = (UniqueConstraint("athlete_id", "date", name="uq_athlete_checkin_date"),)

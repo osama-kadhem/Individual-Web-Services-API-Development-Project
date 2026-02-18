@@ -64,28 +64,24 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 
 ---
 
-### **Phase 4: Insights & Analytics**
+### **Phase 4: Sleep logs and daily check-ins (constraints)** ✅ COMPLETE
 
-**Goal**: Provide meaningful insights from collected data
+**Goal**: Implement strict tracking for daily health metrics with integrity constraints
 
-**Will Include**:
-- ⏳ Readiness score trends over time
-- ⏳ Training load summaries (weekly/monthly)
-- ⏳ Sleep quality correlations with performance
-- ⏳ Fatigue pattern analysis
-- ⏳ Aggregated statistics endpoints
-- ⏳ Data visualization support
-
-**New Endpoints**:
-- `GET /api/v1/insights/readiness/{athlete_id}` - Readiness trends
-- `GET /api/v1/insights/training-load/{athlete_id}` - Training load summary
-- `GET /api/v1/insights/sleep-analysis/{athlete_id}` - Sleep patterns
+**Includes**:
+- ✅ SleepLog model with unique constraint (`athlete_id`, `date`)
+- ✅ CheckIn model with unique constraint (`athlete_id`, `date`)
+- ✅ Data range validation (Sleep 0-24h, Quality 1-5)
+- ✅ Subjective metrics range validation (Check-in 1-10)
+- ✅ Nested endpoints: `POST /athletes/{id}/sleep` and `POST /athletes/{id}/checkins`
+- ✅ **409 Conflict** handling for duplicate daily logs
+- ✅ Date filtering (`from_date`, `to_date`) for all list endpoints
 
 ---
 
-### **Phase 5: Production Ready**
+### **Phase 5: Insights & Analytics**
 
-**Goal**: Prepare for deployment and production use
+**Goal**: Provide meaningful insights from collected data
 
 **Will Include**:
 - ⏳ Database migrations with Alembic
@@ -221,22 +217,21 @@ pytest tests/ -v
 
 ## 📊 Current Status
 
-**Phase**: 3 of 5  
-**Status**: ✅ Phase 3 Complete  
-**Tests**: 20/20 passing  
-**Endpoints**: 22 working  
+**Phase**: 4 of 5  
+**Status**: ✅ Phase 4 Complete  
+**Tests**: 25/25 passing  
+**Endpoints**: 24 working  
 **Entities**: 4 (Athletes, Sessions, SleepLogs, Check-ins)
 
 ---
 
 ## 🔜 Next Steps
 
-To move to **Phase 3**, the following will be added:
-- Pagination on all list endpoints (skip/limit)
-- Advanced filtering for sessions, sleep, and check-ins
-- Sorting capabilities
-- Query parameter validation
-- CORS middleware
+To move to **Phase 5**, the following will be added:
+- Readiness score trends over time
+- Training load summaries (weekly/monthly)
+- Sleep quality correlations with performance
+- Fatigue pattern analysis
 
 ---
 
@@ -248,4 +243,4 @@ To move to **Phase 3**, the following will be added:
 
 ---
 
-**Current Phase**: Phase 3 - Filtering, Pagination & Advanced Queries ✅
+**Current Phase**: Phase 4 - Sleep logs and daily check-ins ✅
