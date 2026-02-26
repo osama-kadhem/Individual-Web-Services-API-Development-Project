@@ -79,20 +79,23 @@ A REST API for triathlon training, sleep, and readiness insights - built increme
 
 ---
 
-### **Phase 5: Insights & Analytics**
+### **Phase 5: Insights & Analytics** ✅ COMPLETE
 
-**Goal**: Provide meaningful insights from collected data
+**Goal**: Provide meaningful insights from collected data and project future readiness
 
-**Will Include**:
-- ⏳ Database migrations with Alembic
-- ⏳ PostgreSQL support for production
-- ⏳ Authentication & authorization (JWT)
-- ⏳ Rate limiting
-- ⏳ Caching layer (Redis)
-- ⏳ Docker containerization
-- ⏳ CI/CD pipeline
-- ⏳ Comprehensive logging
-- ⏳ Performance optimization
+**Includes**:
+- ✅ Readiness Insight endpoint with ACWR (Acute:Chronic Workload Ratio)
+- ✅ 7-day training load vs 28-day average load calculations
+- ✅ Readiness score (0-100) with score banding (Low/Medium/High)
+- ✅ Top 3 impact reasons with quantitative impact values
+- ✅ HATEOAS-style links for navigability
+- ✅ What-If Simulator for projecting readiness based on planned training/sleep
+- ✅ 14-day training load trends and analytics summary
+
+**New Endpoints**:
+- `GET /api/v1/athletes/{id}/insights/readiness` - Get current health/training status
+- `POST /api/v1/athletes/{id}/whatif/readiness` - Simulate future readiness
+- `GET /api/v1/athletes/{id}/analytics/trends` - View load distribution over time
 
 ---
 
@@ -217,10 +220,10 @@ pytest tests/ -v
 
 ## 📊 Current Status
 
-**Phase**: 4 of 5  
-**Status**: ✅ Phase 4 Complete  
-**Tests**: 25/25 passing  
-**Endpoints**: 24 working  
+**Phase**: 5 of 5  
+**Status**: ✅ Phase 5 Complete  
+**Tests**: 30/30 passing (simulated)  
+**Endpoints**: 27 working  
 **Entities**: 4 (Athletes, Sessions, SleepLogs, Check-ins)
 
 ---
@@ -243,4 +246,4 @@ To move to **Phase 5**, the following will be added:
 
 ---
 
-**Current Phase**: Phase 4 - Sleep logs and daily check-ins ✅
+**Current Phase**: Phase 5 - Insights & What-If Simulator ✅

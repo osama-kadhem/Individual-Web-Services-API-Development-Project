@@ -29,6 +29,7 @@ async function showView(view) {
         'sessions': { title: 'Training Sessions', sub: 'Historical workout performance' },
         'sleep': { title: 'Sleep Logs', sub: 'Recovery and sleep metrics' },
         'checkins': { title: 'Daily Check-ins', sub: 'Athlete readiness and well-being' },
+        'insights': { title: 'Training Insights', sub: 'AI-driven performance & readiness analysis' },
         'docs': { title: 'API Console', sub: 'Interactive developer documentation' }
     };
 
@@ -50,6 +51,8 @@ async function showView(view) {
 
         if (view === 'dashboard') {
             fetchRecentActivity();
+        } else if (view === 'insights') {
+            renderInsightsPlaceholder();
         } else {
             fetchData(view);
         }
@@ -138,6 +141,154 @@ function renderTable(view, data) {
         tr.innerHTML = html;
         body.appendChild(tr);
     });
+}
+
+function renderInsightsPlaceholder() {
+    const tableBody = document.getElementById('table-body');
+    const header = document.getElementById('table-headers');
+    header.innerHTML = '';
+
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="10" style="padding: 2rem; text-align: center;">
+                <div class="insight-input-box">
+                    <h3>Analyze Athlete Performance</h3>
+                    <p>Enter Athlete ID to generate real-time readiness insights and trends.</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem;">
+                        <input type="number" id="insight-athlete-id" placeholder="Athlete ID (e.g. 1)" style="width: 200px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white;">
+                        <button class="btn-primary" onclick="loadAthleteInsights()">Generate Report</button>
+                    </div>
+                </div>
+                <div id="insights-result" style="margin-top: 2rem;"></div>
+            </td>
+        </tr>
+    `;
+}
+
+async function loadAthleteInsights() {
+    const athleteId = document.getElementById('insight-athlete-id').value;
+    if (!athleteId) return alert('Please enter an Athlete ID');
+
+    const resultDiv = document.getElementById('insights-result');
+    resultDiv.innerHTML = '<div class="loader">Analyzing data...</div>';
+
+    try {
+        const [readiness, trends] = await Promise.all([
+            fetch(`${API_URL}/athletes/${athleteId}/insights/readiness`).then(r => r.json()),
+            fetch(`${API_URL}/athletes/${athleteId}/analytics/trends`).then(r => r.json())
+        ]);
+
+        if (readiness.detail) throw new Error(readiness.detail);
+
+        renderInsightsDashboard(readiness, trends);
+    } catch (e) {
+        resultDiv.innerHTML = `<div style="color: #EF4444">Error: ${e.message}</div>`;
+    }
+}
+
+function renderInsightsDashboard(readiness, trends) {
+    const resultDiv = document.getElementById('insights-result');
+
+    const bandColor = readiness.readiness_band === 'High' ? '#10B981' : (readiness.readiness_band === 'Medium' ? '#F59E0B' : '#EF4444');
+
+    let reasonsHtml = readiness.top_reasons.map(r => `
+        <div style="display: flex; justify-content: space-between; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 8px;">
+            <span>${r.reason}</span>
+            <span style="color: ${r.impact > 0 ? '#10B981' : '#EF4444'}">${r.impact > 0 ? '+' : ''}${r.impact} pts</span>
+        </div>
+    `).join('');
+
+    resultDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; text-align: left;">
+            <div class="stat-card" style="border-left: 4px solid ${bandColor}">
+                <h4 style="color: var(--text-muted); margin-bottom: 1rem;">Current Readiness</h4>
+                <div style="font-size: 3.5rem; font-weight: 800; color: ${bandColor}">${readiness.readiness_score}%</div>
+                <div style="font-size: 1.2rem; font-weight: 600;">Status: ${readiness.readiness_band}</div>
+                <div style="margin-top: 1.5rem;">
+                    <h5 style="margin-bottom: 10px;">Primary Impact Factors:</h5>
+                    ${reasonsHtml}
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h4 style="color: var(--text-muted); margin-bottom: 1rem;">Training Signals</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px">
+                        <small>ACWR</small>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${readiness.signals.acwr}</div>
+                        <small style="color: #10B981">Optimal: 0.8-1.3</small>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px">
+                        <small>7d Avg Load</small>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${readiness.signals.acute_load_7d}</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px">
+                        <small>Sleep Hours</small>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${readiness.signals.sleep_hours}h</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px">
+                        <small>Sleep Quality</small>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${readiness.signals.sleep_quality}/5</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="openWhatIfModal(${readiness.athlete_id})">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Try What-If Simulator
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function openWhatIfModal(athleteId) {
+    const modal = document.getElementById('modal');
+    const fields = document.getElementById('form-fields');
+    const title = document.getElementById('modal-title');
+    modal.style.display = 'flex';
+    title.innerText = 'What-If Readiness Simulator';
+
+    fields.innerHTML = `
+        <input type="hidden" name="athlete_id" value="${athleteId}">
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Simulate how your plan impact your recovery.</p>
+        <div class="form-group"><label>Planned Session Duration (min)</label><input type="number" name="planned_session_duration" value="60" required></div>
+        <div class="form-group"><label>Planned Intensity (1-10)</label><input type="number" name="planned_session_intensity" value="7" min="1" max="10" required></div>
+        <div class="form-group"><label>Expected Sleep Hours</label><input type="number" step="0.1" name="expected_sleep_hours" value="8" required></div>
+        <div class="form-group"><label>Expected Sleep Quality (1-5)</label><input type="number" name="expected_sleep_quality" value="4" min="1" max="5" required></div>
+    `;
+
+    // Change form submit handler temporarily or handle in generic
+    const form = document.getElementById('generic-form');
+    const oldHandler = form.onsubmit;
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+
+        // Convert types
+        ['planned_session_duration', 'planned_session_intensity', 'expected_sleep_hours', 'expected_sleep_quality'].forEach(k => data[k] = parseFloat(data[k]));
+
+        try {
+            const res = await fetch(`${API_URL}/athletes/${athleteId}/whatif/readiness`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json());
+
+            alert(`${res.change_description}\n\nProjected Score: ${res.projected_readiness.readiness_score}% (${res.projected_readiness.readiness_band})`);
+            closeModal();
+            loadAthleteInsights();
+        } catch (e) {
+            alert('Simulation failed');
+        }
+    };
+
+    // Reset handler when closing
+    const closeBtn = document.querySelector('.modal .btn-primary[onclick="closeModal()"]');
+    const originalClose = closeModal;
+    window.closeModal = () => {
+        form.onsubmit = handleFormSubmit;
+        originalClose();
+    };
 }
 
 // Modal Management
