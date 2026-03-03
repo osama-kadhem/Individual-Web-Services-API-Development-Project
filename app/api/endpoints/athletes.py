@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import date
 from app.db.session import get_db
 from app.schemas.athlete import Athlete, AthleteCreate, AthleteUpdate
 from app.schemas.sleep_log import SleepLog, SleepLogCreate
@@ -11,79 +10,115 @@ from app.crud import crud_athlete, crud_sleep, crud_checkin
 router = APIRouter()
 
 
-@router.post("/", response_model=Athlete, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=Athlete,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new athlete",
+    description="Registers a new athlete in the system.",
+    responses={
+        400: {"description": "Email already registered."},
+    },
+)
 def create_athlete(athlete: AthleteCreate, db: Session = Depends(get_db)):
-    """Create a new athlete"""
     db_athlete = crud_athlete.get_athlete_by_email(db, email=athlete.email)
     if db_athlete:
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud_athlete.create_athlete(db=db, athlete=athlete)
 
 
-@router.get("/", response_model=List[Athlete])
+@router.get(
+    "/",
+    response_model=List[Athlete],
+    summary="List all athletes",
+    description="Returns a paginated list of all registered athletes.",
+)
 def list_athletes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """List all athletes with pagination"""
     return crud_athlete.get_athletes(db, skip=skip, limit=limit)
 
 
-@router.get("/{athlete_id}", response_model=Athlete)
+@router.get(
+    "/{athlete_id}",
+    response_model=Athlete,
+    summary="Get an athlete by ID",
+    description="Retrieves a single athlete by their unique identifier.",
+)
 def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
-    """Get a specific athlete by ID"""
-    athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
-    if not athlete:
+    db_athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
+    if not db_athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-    return athlete
+    return db_athlete
 
 
-@router.put("/{athlete_id}", response_model=Athlete)
-def update_athlete(athlete_id: int, athlete_update: AthleteUpdate, db: Session = Depends(get_db)):
-    """Update an athlete"""
-    athlete = crud_athlete.update_athlete(db=db, athlete_id=athlete_id, athlete_update=athlete_update)
-    if not athlete:
+@router.put(
+    "/{athlete_id}",
+    response_model=Athlete,
+    summary="Update an athlete",
+    description="Updates an existing athlete profile.",
+)
+def update_athlete(athlete_id: int, athlete: AthleteUpdate, db: Session = Depends(get_db)):
+    db_athlete = crud_athlete.update_athlete(db, athlete_id=athlete_id, athlete_update=athlete)
+    if not db_athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-    return athlete
+    return db_athlete
 
 
-@router.delete("/{athlete_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{athlete_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an athlete",
+    description="Deletes an athlete and all associated data.",
+)
 def delete_athlete(athlete_id: int, db: Session = Depends(get_db)):
-    """Delete an athlete"""
-    success = crud_athlete.delete_athlete(db=db, athlete_id=athlete_id)
+    success = crud_athlete.delete_athlete(db, athlete_id=athlete_id)
     if not success:
         raise HTTPException(status_code=404, detail="Athlete not found")
     return None
 
 
-@router.post("/{athlete_id}/sleep", response_model=SleepLog, status_code=status.HTTP_201_CREATED)
-def create_athlete_sleep_log(athlete_id: int, sleep_log: SleepLogCreate, db: Session = Depends(get_db)):
-    """Phase 4: Create a sleep log for a specific athlete"""
-    if athlete_id != sleep_log.athlete_id:
-        raise HTTPException(status_code=400, detail="Athlete ID mismatch")
-    
+@router.post(
+    "/{athlete_id}/sleep",
+    response_model=SleepLog,
+    status_code=status.HTTP_201_CREATED,
+    summary="Log sleep for an athlete",
+    description="Records a night of sleep for a specific athlete.",
+    responses={
+        404: {"description": "Athlete not found."},
+        409: {"description": "Sleep log already exists for this date."},
+    },
+)
+def create_athlete_sleep(athlete_id: int, sleep_in: SleepLogCreate, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     
-    log_date = sleep_log.date or date.today()
-    existing = crud_sleep.get_sleep_log_by_date(db, athlete_id=athlete_id, log_date=log_date)
+    existing = crud_sleep.get_sleep_log_by_date(db, athlete_id=athlete_id, log_date=sleep_in.date)
     if existing:
-        raise HTTPException(status_code=409, detail=f"Sleep log already exists for {log_date}")
-        
-    return crud_sleep.create_sleep_log(db=db, sleep_log=sleep_log)
+        raise HTTPException(status_code=409, detail="Sleep log already exists for this date")
+    
+    sleep_in.athlete_id = athlete_id
+    return crud_sleep.create_sleep_log(db=db, sleep_log=sleep_in)
 
 
-@router.post("/{athlete_id}/checkins", response_model=CheckIn, status_code=status.HTTP_201_CREATED)
-def create_athlete_checkin(athlete_id: int, checkin: CheckInCreate, db: Session = Depends(get_db)):
-    """Phase 4: Create a check-in for a specific athlete"""
-    if athlete_id != checkin.athlete_id:
-        raise HTTPException(status_code=400, detail="Athlete ID mismatch")
-        
+@router.post(
+    "/{athlete_id}/checkins",
+    response_model=CheckIn,
+    status_code=status.HTTP_201_CREATED,
+    summary="Log wellness for an athlete",
+    description="Records a wellness check-in for a specific athlete.",
+    responses={
+        404: {"description": "Athlete not found."},
+        409: {"description": "Check-in already exists for this date."},
+    },
+)
+def create_athlete_checkin(athlete_id: int, checkin_in: CheckInCreate, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-        
-    checkin_date = checkin.date or date.today()
-    existing = crud_checkin.get_checkin_by_date(db, athlete_id=athlete_id, checkin_date=checkin_date)
+    
+    existing = crud_checkin.get_checkin_by_date(db, athlete_id=athlete_id, checkin_date=checkin_in.date)
     if existing:
-        raise HTTPException(status_code=409, detail=f"Check-in already exists for {checkin_date}")
-        
-    return crud_checkin.create_checkin(db=db, checkin=checkin)
+        raise HTTPException(status_code=409, detail="Check-in already exists for this date")
+    
+    checkin_in.athlete_id = athlete_id
+    return crud_checkin.create_checkin(db=db, checkin=checkin_in)

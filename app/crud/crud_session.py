@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 from app.models.models import Session as SessionModel
 from app.schemas.session import SessionCreate, SessionUpdate
+from app.crud.base import apply_update, delete_record, save_new
 
 
 def get_session(db: Session, session_id: int) -> Optional[SessionModel]:
@@ -10,13 +11,13 @@ def get_session(db: Session, session_id: int) -> Optional[SessionModel]:
 
 
 def get_sessions(
-    db: Session, 
-    athlete_id: Optional[int] = None, 
+    db: Session,
+    athlete_id: Optional[int] = None,
     sport: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    skip: int = 0, 
-    limit: int = 100
+    skip: int = 0,
+    limit: int = 100,
 ) -> List[SessionModel]:
     query = db.query(SessionModel)
     if athlete_id:
@@ -31,32 +32,12 @@ def get_sessions(
 
 
 def create_session(db: Session, session: SessionCreate) -> SessionModel:
-    db_session = SessionModel(**session.model_dump())
-    db.add(db_session)
-    db.commit()
-    db.refresh(db_session)
-    return db_session
+    return save_new(db, SessionModel(**session.model_dump()))
 
 
 def update_session(db: Session, session_id: int, session_update: SessionUpdate) -> Optional[SessionModel]:
-    db_session = get_session(db, session_id)
-    if not db_session:
-        return None
-    
-    update_data = session_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_session, key, value)
-    
-    db.commit()
-    db.refresh(db_session)
-    return db_session
+    return apply_update(db, get_session(db, session_id), session_update)
 
 
 def delete_session(db: Session, session_id: int) -> bool:
-    db_session = get_session(db, session_id)
-    if not db_session:
-        return False
-    
-    db.delete(db_session)
-    db.commit()
-    return True
+    return delete_record(db, get_session(db, session_id))

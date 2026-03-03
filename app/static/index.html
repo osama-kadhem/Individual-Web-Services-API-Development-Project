@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="IronMind Coach – data-driven triathlon training dashboard. Track athletes, sessions, sleep, and readiness.">
     <title>IronMind Coach | Performance Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,7 +13,8 @@
 
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
+
+        <!-- ── Sidebar ── -->
         <aside class="sidebar">
             <div class="logo-section">
                 <div class="logo-icon">IM</div>
@@ -20,32 +23,32 @@
 
             <nav>
                 <ul class="nav-links">
-                    <li class="nav-item active" onclick="showView('dashboard')">
+                    <li id="nav-dashboard" class="nav-item active" onclick="showView('dashboard')">
                         <i class="fa-solid fa-chart-line"></i> Dashboard
                     </li>
-                    <li class="nav-item" onclick="showView('athletes')">
+                    <li id="nav-athletes" class="nav-item" onclick="showView('athletes')">
                         <i class="fa-solid fa-users"></i> Athletes
                     </li>
-                    <li class="nav-item" onclick="showView('sessions')">
+                    <li id="nav-sessions" class="nav-item" onclick="showView('sessions')">
                         <i class="fa-solid fa-person-running"></i> Sessions
                     </li>
-                    <li class="nav-item" onclick="showView('sleep')">
+                    <li id="nav-sleep" class="nav-item" onclick="showView('sleep')">
                         <i class="fa-solid fa-moon"></i> Sleep Logs
                     </li>
-                    <li class="nav-item" onclick="showView('checkins')">
+                    <li id="nav-checkins" class="nav-item" onclick="showView('checkins')">
                         <i class="fa-solid fa-clipboard-check"></i> Check-ins
                     </li>
-                    <li class="nav-item" onclick="showView('insights')">
+                    <li id="nav-insights" class="nav-item" onclick="showView('insights')">
                         <i class="fa-solid fa-brain"></i> Insights
                     </li>
-                    <li class="nav-item" onclick="showView('docs')">
+                    <li id="nav-docs" class="nav-item" onclick="showView('docs')">
                         <i class="fa-solid fa-code"></i> API Console
                     </li>
                 </ul>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
+        <!-- ── Main content ── -->
         <main class="main-content">
             <header>
                 <div class="page-title">
@@ -53,77 +56,71 @@
                     <p id="view-subtitle">Training overview and analytics</p>
                 </div>
                 <div class="user-profile">
-                    <span id="health-status" class="stat-trend up"><i class="fa-solid fa-circle"></i> API Online</span>
+                    <span id="health-status" class="stat-trend up">
+                        <i class="fa-solid fa-circle"></i> API Online
+                    </span>
                 </div>
             </header>
 
-            <!-- Dashboard Stats -->
+            <!-- Stats row -->
             <div id="stats-section" class="stats-grid">
-                <div class="stat-card fade-in" style="animation-delay: 0.1s">
+                <div class="stat-card fade-in" style="animation-delay:0.05s">
                     <div class="stat-header">Total Athletes <i class="fa-solid fa-users"></i></div>
-                    <div class="stat-value" id="count-athletes">0</div>
-                    <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> +0% this month</div>
+                    <div class="stat-value" id="count-athletes">–</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-circle-dot"></i> Registered</div>
                 </div>
-                <div class="stat-card fade-in" style="animation-delay: 0.2s">
+                <div class="stat-card fade-in" style="animation-delay:0.15s">
                     <div class="stat-header">Training Sessions <i class="fa-solid fa-person-running"></i></div>
-                    <div class="stat-value" id="count-sessions">0</div>
-                    <div class="stat-trend up"><i class="fa-solid fa-arrow-up"></i> +0 session today</div>
+                    <div class="stat-value" id="count-sessions">–</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-circle-dot"></i> All time</div>
                 </div>
-                <div class="stat-card fade-in" style="animation-delay: 0.3s">
-                    <div class="stat-header">Readiness Avg <i class="fa-solid fa-bolt"></i></div>
-                    <div class="stat-value" id="avg-readiness">0%</div>
-                    <div class="stat-trend up"><i class="fa-solid fa-bolt"></i> Goal: 85%</div>
+                <div class="stat-card fade-in" style="animation-delay:0.25s">
+                    <div class="stat-header">Avg Readiness <i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-value" id="avg-readiness">–</div>
+                    <div class="stat-trend up"><i class="fa-solid fa-bullseye"></i> Goal: 85%</div>
                 </div>
             </div>
 
-            <!-- Content Container -->
+            <!-- Data card -->
             <div id="data-container" class="content-card fade-in">
                 <div class="card-header">
                     <h2 id="container-title">Recent Activity</h2>
-                    <button class="btn-primary" onclick="openModal()">
+                    <button id="add-btn" class="btn-primary" onclick="openModal()">
                         <i class="fa-solid fa-plus"></i> Add New
                     </button>
                 </div>
-
                 <div id="table-wrapper">
                     <table id="data-table">
                         <thead>
-                            <tr id="table-headers">
-                                <!-- Dynamic Headers -->
-                            </tr>
+                            <tr id="table-headers"></tr>
                         </thead>
-                        <tbody id="table-body">
-                            <!-- Dynamic Content -->
-                        </tbody>
+                        <tbody id="table-body"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- API Docs Container -->
+            <!-- API Console (iframe) -->
             <div id="docs-view" class="content-card fade-in"
-                style="display: none; padding: 0; min-height: 80vh; overflow: hidden;">
-                <iframe id="docs-iframe" src="/docs" style="width: 100%; height: 80vh; border: none;"></iframe>
+                style="display:none; padding:0; min-height:80vh; overflow:hidden;">
+                <iframe id="docs-iframe" src="/docs" style="width:100%; height:80vh; border:none;"></iframe>
             </div>
         </main>
     </div>
 
-    <!-- Modals -->
+    <!-- ── Modal ── -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modal-title">Add New Athlete</h2>
-                <p>Enter details below to register on the platform</p>
+                <h2 id="modal-title">Add New</h2>
+                <p id="modal-subtitle">Fill in the details below</p>
             </div>
             <form id="generic-form">
-                <div id="form-fields">
-                    <!-- Dynamic Form Fields -->
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="button" class="btn-primary"
-                        style="background: transparent; border: 1px solid var(--glass-border);"
-                        onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn-primary" style="flex: 1; justify-content: center;">Save
-                        Changes</button>
+                <div id="form-fields"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex:1; justify-content:center;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save
+                    </button>
                 </div>
             </form>
         </div>

@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import date
 from app.models.models import CheckIn
 from app.schemas.checkin import CheckInCreate, CheckInUpdate
+from app.crud.base import apply_update, delete_record, save_new
 
 
 def get_checkin(db: Session, checkin_id: int) -> Optional[CheckIn]:
@@ -10,20 +11,20 @@ def get_checkin(db: Session, checkin_id: int) -> Optional[CheckIn]:
 
 
 def get_checkin_by_date(db: Session, athlete_id: int, checkin_date: date) -> Optional[CheckIn]:
-    """Check if a check-in already exists for an athlete on a specific date"""
+    """Return the check-in for an athlete on a specific date, or None."""
     return db.query(CheckIn).filter(
-        CheckIn.athlete_id == athlete_id, 
-        CheckIn.date == checkin_date
+        CheckIn.athlete_id == athlete_id,
+        CheckIn.date == checkin_date,
     ).first()
 
 
 def get_checkins(
-    db: Session, 
-    athlete_id: Optional[int] = None, 
+    db: Session,
+    athlete_id: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    skip: int = 0, 
-    limit: int = 100
+    skip: int = 0,
+    limit: int = 100,
 ) -> List[CheckIn]:
     query = db.query(CheckIn)
     if athlete_id:
@@ -36,32 +37,12 @@ def get_checkins(
 
 
 def create_checkin(db: Session, checkin: CheckInCreate) -> CheckIn:
-    db_checkin = CheckIn(**checkin.model_dump())
-    db.add(db_checkin)
-    db.commit()
-    db.refresh(db_checkin)
-    return db_checkin
+    return save_new(db, CheckIn(**checkin.model_dump()))
 
 
 def update_checkin(db: Session, checkin_id: int, checkin_update: CheckInUpdate) -> Optional[CheckIn]:
-    db_checkin = get_checkin(db, checkin_id)
-    if not db_checkin:
-        return None
-    
-    update_data = checkin_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_checkin, key, value)
-    
-    db.commit()
-    db.refresh(db_checkin)
-    return db_checkin
+    return apply_update(db, get_checkin(db, checkin_id), checkin_update)
 
 
 def delete_checkin(db: Session, checkin_id: int) -> bool:
-    db_checkin = get_checkin(db, checkin_id)
-    if not db_checkin:
-        return False
-    
-    db.delete(db_checkin)
-    db.commit()
-    return True
+    return delete_record(db, get_checkin(db, checkin_id))

@@ -1,143 +1,69 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.openapi.docs import get_swagger_ui_html
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.core.config import settings
+from app.core.errors import (
+    http_exception_handler,
+    validation_exception_handler,
+    unhandled_exception_handler,
+)
 from app.db.session import engine, Base
 from app.api.v1.api import api_router
-import os
 
-from fastapi.openapi.docs import get_swagger_ui_html
-
-# Create database tables
+# Initialize database tables
 Base.metadata.create_all(bind=engine)
+
+tags_metadata = [
+    {
+        "name": "Athletes",
+        "description": "Manage athlete profiles, registration, and basic information.",
+    },
+    {
+        "name": "Insights",
+        "description": "Evidence-based readiness scoring, ACWR analysis, and performance simulation.",
+    },
+    {
+        "name": "Sessions",
+        "description": "Log and track training workouts across different sports.",
+    },
+    {
+        "name": "Sleep Logs",
+        "description": "Monitor recovery through sleep duration and quality metrics.",
+    },
+    {
+        "name": "Check-ins",
+        "description": "Daily subjective wellness tracking including fatigue, stress, and mood.",
+    },
+    {
+        "name": "System",
+        "description": "Core API health and versioning information.",
+    },
+]
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="IronMind Coach API - Data-driven Triathlon Training Insights",
-    docs_url=None, # Disable default docs
-    redoc_url="/redoc"
+    openapi_tags=tags_metadata,
+    description=(
+        "A specialized REST API for high-performance triathlon training and recovery analytics. "
+        "Built on evidence-based sports science metrics like Acute:Chronic Workload Ratio (ACWR)."
+    ),
+    docs_url=None,
+    redoc_url=None, # Disabled to serve custom-styled ReDoc
 )
 
-@app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    ironman_css = """
-    <style>
-        body { background-color: #0A0F14 !important; margin: 0; padding: 0; }
-        .swagger-ui { background-color: #0A0F14 !important; color: #FFFFFF !important; padding-bottom: 50px; }
-        .swagger-ui .topbar { display: none; }
-        
-        /* Typography */
-        .swagger-ui .info .title, .swagger-ui .info p, .swagger-ui .info li, .swagger-ui .info td { 
-            color: #FFFFFF !important; 
-            font-family: 'Inter', sans-serif !important; 
-        }
-        
-        /* Section Tags */
-        .swagger-ui .opblock-tag { 
-            color: #E31837 !important; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; 
-            font-family: 'Outfit', sans-serif !important; 
-            font-weight: 700 !important;
-            padding: 20px 0 !important; 
-        }
-        
-        /* Operation Blocks */
-        .swagger-ui .opblock { 
-            border-radius: 16px !important; 
-            border: 1px solid rgba(255, 255, 255, 0.08) !important; 
-            background: rgba(255, 255, 255, 0.03) !important; 
-            margin-bottom: 20px !important; 
-            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3) !important;
-            backdrop-filter: blur(10px) !important;
-            overflow: hidden !important;
-        }
-        
-        .swagger-ui .opblock .opblock-summary { padding: 15px 24px !important; }
-        .swagger-ui .opblock-summary-path { color: #FFFFFF !important; font-weight: 600 !important; }
-        .swagger-ui .opblock-summary-description { color: #8E9AAF !important; }
-        
-        /* Headers in expanded blocks (fixing the white bars) */
-        .swagger-ui .opblock-section-header {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-            padding: 12px 24px !important;
-        }
-        .swagger-ui .opblock-section-header h4 { color: #FFFFFF !important; }
-        
-        .swagger-ui .opblock-body { background: transparent !important; }
-        
-        /* Parameters & Tables */
-        .swagger-ui table thead tr th { color: #8E9AAF !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }
-        .swagger-ui .parameter__name, .swagger-ui .parameter__type { color: #FFFFFF !important; }
-        .swagger-ui .opblock-description-wrapper p { color: #8E9AAF !important; }
-        
-        /* Buttons */
-        .swagger-ui .btn.execute { 
-            background-color: #E31837 !important; 
-            border-color: #E31837 !important; 
-            color: #FFFFFF !important;
-            border-radius: 12px !important; 
-            font-weight: 700 !important;
-            padding: 10px 30px !important;
-            box-shadow: 0 4px 15px rgba(227, 24, 55, 0.3) !important;
-            transition: all 0.2s ease !important;
-        }
-        .swagger-ui .btn.execute:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(227, 24, 55, 0.4) !important; }
-        
-        .swagger-ui .btn.try-out__btn { 
-            background-color: #FFB800 !important; 
-            border-color: #FFB800 !important; 
-            color: #000000 !important; 
-            font-weight: 700 !important; 
-            border-radius: 8px !important; 
-        }
-        
-        .swagger-ui .btn.authorize { color: #FFB800 !important; border-color: #FFB800 !important; border-radius: 8px !important; }
-        .swagger-ui .btn.authorize svg { fill: #FFB800 !important; }
-        
-        /* Input & Select */
-        .swagger-ui select, .swagger-ui input, .swagger-ui textarea { 
-            background: rgba(255, 255, 255, 0.05) !important; 
-            color: #FFFFFF !important; 
-            border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-            border-radius: 8px !important; 
-            padding: 8px 12px !important;
-        }
-        
-        /* Models */
-        .swagger-ui section.models { 
-            border: 1px solid rgba(255, 255, 255, 0.08) !important; 
-            background: rgba(255, 255, 255, 0.02) !important; 
-            border-radius: 16px !important; 
-        }
-        .swagger-ui section.models h4 { color: #8E9AAF !important; border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; }
-        .swagger-ui .model-box { background: rgba(0, 0, 0, 0.2) !important; border-radius: 8px !important; }
-        
-        /* Code Blocks */
-        .swagger-ui .microlight { background: #0F172A !important; border-radius: 12px !important; color: #CBD5E1 !important; }
-        
-        /* Status Codes */
-        .swagger-ui .response-col_status { color: #FFFFFF !important; font-weight: 700 !important; }
-        .swagger-ui .tabli button.active { color: #E31837 !important; border-bottom: 2px solid #E31837 !important; }
-    </style>
-    """
-    from fastapi.responses import HTMLResponse
-    
-    html = get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title=app.title + " - API Console",
-        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
-        swagger_ui_parameters={"defaultModelsExpandDepth": -1},
-    )
-    
-    new_content = html.body.decode().replace("</head>", f"{ironman_css}</head>")
-    return HTMLResponse(content=new_content)
+# Exception Handlers
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
-# Set all CORS enabled origins
+# Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -146,21 +72,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API Router
+# Routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Mount Static Files
+# Static Files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-@app.get("/")
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui():
+    """Custom-themed Swagger UI."""
+    theme_url = "/static/css/swagger-theme.css"
+    extra_head = (
+        f'<link rel="preconnect" href="https://fonts.googleapis.com">'
+        f'<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700'
+        f'&family=Outfit:wght@600;800&display=swap" rel="stylesheet">'
+        f'<link rel="stylesheet" href="{theme_url}">'
+    )
+    html = get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} | Developer Console",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
+        swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+    )
+    content = html.body.decode().replace("</head>", f"{extra_head}</head>")
+    return HTMLResponse(content=content)
+
+
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc_ui():
+    """Custom-themed ReDoc interface."""
+    return FileResponse(os.path.join(static_dir, "redoc.html"))
+
+
+@app.get("/", include_in_schema=False)
 def root():
-    """Serve the dashboard"""
     return FileResponse(os.path.join(static_dir, "index.html"))
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["System"],
+    summary="API Health Status",
+)
 def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "phase": "5"}
+    return {"status": "healthy", "version": settings.VERSION}

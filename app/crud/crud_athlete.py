@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.models import Athlete
 from app.schemas.athlete import AthleteCreate, AthleteUpdate
+from app.crud.base import apply_update, delete_record, save_new
 
 
 def get_athlete(db: Session, athlete_id: int) -> Optional[Athlete]:
@@ -17,32 +18,12 @@ def get_athletes(db: Session, skip: int = 0, limit: int = 100) -> List[Athlete]:
 
 
 def create_athlete(db: Session, athlete: AthleteCreate) -> Athlete:
-    db_athlete = Athlete(**athlete.model_dump())
-    db.add(db_athlete)
-    db.commit()
-    db.refresh(db_athlete)
-    return db_athlete
+    return save_new(db, Athlete(**athlete.model_dump()))
 
 
 def update_athlete(db: Session, athlete_id: int, athlete_update: AthleteUpdate) -> Optional[Athlete]:
-    db_athlete = get_athlete(db, athlete_id)
-    if not db_athlete:
-        return None
-    
-    update_data = athlete_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_athlete, key, value)
-    
-    db.commit()
-    db.refresh(db_athlete)
-    return db_athlete
+    return apply_update(db, get_athlete(db, athlete_id), athlete_update)
 
 
 def delete_athlete(db: Session, athlete_id: int) -> bool:
-    db_athlete = get_athlete(db, athlete_id)
-    if not db_athlete:
-        return False
-    
-    db.delete(db_athlete)
-    db.commit()
-    return True
+    return delete_record(db, get_athlete(db, athlete_id))

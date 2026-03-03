@@ -9,73 +9,72 @@ from app.crud import crud_athlete
 
 router = APIRouter()
 
-@router.get("/{athlete_id}/insights/readiness", response_model=ReadinessInsight)
+
+@router.get(
+    "/{athlete_id}/insights/readiness",
+    response_model=ReadinessInsight,
+    summary="Get athlete readiness",
+    description="Calculates training readiness using Acute:Chronic Workload Ratio (ACWR) and recovery metrics.",
+)
 def get_readiness_insight(
-    athlete_id: int, 
-    target_date: Optional[date] = Query(None), 
+    athlete_id: int,
+    target_date: Optional[date] = Query(None, description="Reference date for analysis (defaults to today)."),
     db: Session = Depends(get_db)
 ):
-    """
-    Phase 5: Get readiness insight for an athlete.
-    Includes readiness score, ACWR, and top impact factors.
-    """
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     
-    computation_date = target_date or date.today()
-    return insight_service.compute_readiness(db, athlete_id, computation_date)
+    analysis_date = target_date or date.today()
+    return insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=analysis_date)
 
-@router.get("/{athlete_id}/analytics/trends", response_model=AnalyticsTrends)
-def get_athlete_trends(athlete_id: int, db: Session = Depends(get_db)):
-    """
-    Phase 5: Get training load trends and summaries for the last 14 days.
-    """
+
+@router.get(
+    "/{athlete_id}/analytics/trends",
+    response_model=AnalyticsTrends,
+    summary="Get training trends",
+    description="Retrieves training load distribution and averages over the last 14 days.",
+)
+def get_training_trends(athlete_id: int, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-    
-    return insight_service.get_analytics(db, athlete_id)
+        
+    return insight_service.get_analytics(db, athlete_id=athlete_id)
 
-@router.post("/{athlete_id}/whatif/readiness", response_model=WhatIfResponse)
-def what_if_readiness(
-    athlete_id: int, 
-    request: WhatIfRequest, 
-    db: Session = Depends(get_db)
-):
-    """
-    Phase 5: What-If Simulator.
-    Project how a planned session and expected sleep will impact today's readiness.
-    """
+
+@router.post(
+    "/{athlete_id}/whatif/readiness",
+    response_model=WhatIfResponse,
+    summary="Simulate future readiness",
+    description="Projects health scores based on planned training sessions and expected sleep.",
+)
+def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
     
     today = date.today()
     
-    # 1. Current state
-    original = insight_service.compute_readiness(db, athlete_id, today)
+    # Original baseline
+    original = insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=today)
     
-    # 2. Projected state
+    # Projected
     projected = insight_service.compute_readiness(
         db, 
-        athlete_id, 
-        today,
-        mock_sleep=request.expected_sleep_hours,
-        mock_quality=request.expected_sleep_quality,
-        mock_session_load=request.planned_session_duration * request.planned_session_intensity
+        athlete_id=athlete_id, 
+        target_date=today,
+        mock_sleep=whatif.expected_sleep_hours,
+        mock_quality=whatif.expected_sleep_quality,
+        mock_session_load=whatif.planned_session_duration * whatif.planned_session_intensity
     )
     
-    # Simple change description
     diff = projected.readiness_score - original.readiness_score
-    if diff > 5:
-        desc = f"Your readiness is projected to improve by {diff} points with this sleep/training plan."
-    elif diff < -5:
-        desc = f"This plan may reduce your readiness by {abs(diff)} points. Consider more recovery."
-    else:
-        desc = "Your readiness will remain stable under this plan."
-        
+    tone = "improve" if diff >= 0 else "reduce"
+    desc = f"This plan is projected to {tone} your readiness score by {abs(diff)} points compared to your current baseline."
+    
     return WhatIfResponse(
+        athlete_id=athlete_id,
         original_readiness=original,
         projected_readiness=projected,
         change_description=desc

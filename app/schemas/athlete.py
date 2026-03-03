@@ -11,8 +11,7 @@ class AthleteBase(BaseModel):
 
 
 class AthleteCreate(AthleteBase):
-    """Schema for creating an athlete"""
-    pass
+    """Schema for creating an athlete – inherits all fields from AthleteBase."""
 
 
 class AthleteUpdate(BaseModel):

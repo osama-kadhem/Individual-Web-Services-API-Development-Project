@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IronMind API | Reference Manual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        /* Modern Professional Theme - Neutral & Clean */
+        :root {
+            --primary: #0F172A;
+            /* Deep Slate */
+            --accent: #2563EB;
+            /* Professional Blue */
+            --bg: #FFFFFF;
+            --sidebar: #F8FAFC;
+            --border: #E2E8F0;
+            --text: #1E293B;
+            --text-muted: #64748B;
+            --code-bg: #0F172A;
+            --sans: "Inter", sans-serif;
+            --mono: "JetBrains Mono", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+        }
+
+        /* Unified Navigation Bar */
+        #topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 56px;
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--sans);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .nav-links a.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ReDoc Scroll Fix */
+        #redoc-container {
+            margin-top: 0;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80vh;
+            font-family: var(--sans);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="topbar">
+        <a href="/" class="brand">
+            <div class="brand-icon">IM</div>
+            <span>IronMind Coach</span>
+        </a>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/docs">Console</a>
+            <a href="/redoc" class="active">API Reference</a>
+        </div>
+    </div>
+
+    <div id="redoc-container">
+        <div class="loading">Preparing API Reference...</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+    <script>
+        Redoc.init('/openapi.json', {
+            theme: {
+                colors: {
+                    primary: { main: '#0F172A' },
+                    success: { main: '#10B981' },
+                    warning: { main: '#F59E0B' },
+                    error: { main: '#EF4444' },
+                    text: {
+                        primary: '#1E293B',
+                        secondary: '#64748B',
+                    },
+                    border: {
+                        dark: '#E2E8F0',
+                        light: '#F1F5F9',
+                    },
+                    http: {
+                        get: '#10B981',
+                        post: '#2563EB',
+                        put: '#F59E0B',
+                        delete: '#EF4444',
+                    }
+                },
+                typography: {
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '15px',
+                    lineHeight: '1.6',
+                    headings: {
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: '700',
+                    },
+                    code: {
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: '13px',
+                        backgroundColor: '#F1F5F9',
+                        color: '#1E293B',
+                    }
+                },
+                sidebar: {
+                    backgroundColor: '#F8FAFC',
+                    width: '280px',
+                    textColor: '#64748B',
+                    activeTextColor: '#2563EB',
+                },
+                rightPanel: {
+                    backgroundColor: '#0F172A',
+                    textColor: '#E2E8F0',
+                    width: '40%',
+                },
+                shape: {
+                    borderRadius: '6px',
+                },
+                overrideStyles: `
+                    /* Navbar Hide */
+                    .redoc-wrap > div:first-child { display: none !important; }
+                    
+                    /* Sidebar Styling */
+                    .menu-content { 
+                        border-right: 1px solid #E2E8F0 !important;
+                        padding-top: 1.5rem !important;
+                    }
+
+                    /* Sidebar active item */
+                    .menu-item-title.active {
+                        border-right: 3px solid #2563EB !important;
+                        background: #F1F5F9 !important;
+                    }
+
+                    /* Search Box */
+                    .search-input {
+                        background: #FFFFFF !important;
+                        border: 1px solid #CBD5E1 !important;
+                        border-radius: 6px !important;
+                        font-family: inherit !important;
+                    }
+
+                    /* Content Padding */
+                    .api-content { padding-top: 2rem !important; }
+
+                    /* Code Blocks */
+                    pre, code {
+                        font-family: 'JetBrains Mono', monospace !important;
+                    }
+
+                    /* Required label */
+                    .required-label { color: #DC2626 !important; }
+                    
+                    /* Response tabs */
+                    .tab-header button.active {
+                        color: #2563EB !important;
+                        border-bottom: 2px solid #2563EB !important;
+                    }
+                `
+            },
+            hideDownloadButton: false,
+            nativeScrollbars: true,
+            pathInMiddlePanel: true,
+            requiredPropsFirst: true,
+            noAutoAuth: true,
+        }, document.getElementById('redoc-container'));
+    </script>
+</body>
+
+</html>
