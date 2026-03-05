@@ -64,7 +64,23 @@ The server will be available at: **http://localhost:8000**
 
 ---
 
-## 📖 API Documentation
+## � Data Ingestion (Kaggle Dataset)
+
+To ensure real-world complexity, the API is pre-populated using the **Athlete Training & Recovery Tracker** dataset.
+
+**Download & Import Process:**
+```bash
+# 1. Download from Kaggle via kagglehub
+./venv/bin/python3 -c 'import kagglehub; kagglehub.dataset_download("prince7489/athlete-training-and-recovery-tracker-dataset")'
+
+# 2. Run the ETL script to clean and map data to SQLite
+./venv/bin/python3 scripts/import_dataset.py
+```
+*Note: The ETL script standardizes metrics, converts units (hours to minutes), and maps recovery indices to centralized wellness models.*
+
+---
+
+## �📖 API Documentation
 
 The platform provides two interactive documentation interfaces:
 

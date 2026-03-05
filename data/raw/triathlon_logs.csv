@@ -1,0 +1,11 @@
+date,athlete_name,athlete_email,sport,duration_min,distance_km,intensity_rpe,notes
+2026-02-01,Mark Allen,mark.allen@example.com,Swim,45,2.5,6,Technique focus
+2026-02-01,Mark Allen,mark.allen@example.com,Run,60,12,7,Steady state
+2026-02-02,Mark Allen,mark.allen@example.com,Bike,120,55,5,Base endurance
+2026-02-01,Paula Newby,paula.n@ironman.org,Bike,180,90,8,Hill repeats
+2026-02-01,Paula Newby,paula.n@ironman.org,Run,30,5,4,Recovery
+2026-02-02,Paula Newby,paula.n@ironman.org,Swim,60,3,7,Threshold intervals
+2026-02-03,,unknown@example.com,Run,45,8,5,Missing name row
+2026-02-04,Scott Tinley,scott.t@legend.com,Bike,90,40,NA,Invalid intensity test
+2026-02-05,Scott Tinley,scott.t@legend.com,Run,null,10,6,Null duration test
+2026-02-06,Scott Tinley,scott.t@legend.com,Swim,50,2.2,7,Normal row

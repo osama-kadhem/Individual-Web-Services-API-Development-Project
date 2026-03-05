@@ -54,8 +54,8 @@ app = FastAPI(
         "A specialized REST API for high-performance triathlon training and recovery analytics. "
         "Built on evidence-based sports science metrics like Acute:Chronic Workload Ratio (ACWR)."
     ),
-    docs_url=None,
-    redoc_url=None, # Disabled to serve custom-styled ReDoc
+    docs_url="/docs",
+    redoc_url=None, 
 )
 
 # Exception Handlers

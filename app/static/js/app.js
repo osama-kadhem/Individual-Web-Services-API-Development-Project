@@ -1,6 +1,7 @@
 'use strict';
 
 const API = '/api/v1';
+const API_KEY = 'ironmind_secret_2026';
 let currentView = 'dashboard';
 
 // Helpers
@@ -113,9 +114,9 @@ function showView(view) {
 async function fetchStats() {
     try {
         const [athletes, sessions, checkins] = await Promise.all([
-            fetch(`${API}/athletes/`).then(r => r.json()),
-            fetch(`${API}/sessions/`).then(r => r.json()),
-            fetch(`${API}/checkins/`).then(r => r.json()),
+            fetch(`${API}/athletes/`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json()),
+            fetch(`${API}/sessions/`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json()),
+            fetch(`${API}/checkins/`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json()),
         ]);
 
         document.getElementById('count-athletes').textContent = Array.isArray(athletes) ? athletes.length : '–';
@@ -141,7 +142,7 @@ async function fetchData(view) {
     const endpoint = view === 'sleep' ? 'sleep-logs' : (view === 'dashboard' ? 'athletes' : view);
 
     try {
-        const data = await fetch(`${API}/${endpoint}/`).then(r => r.json());
+        const data = await fetch(`${API}/${endpoint}/`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json());
         if (!Array.isArray(data)) throw new Error(extractError(data));
         renderTable(view === 'dashboard' ? 'athletes' : view, data);
     } catch (e) {
@@ -260,8 +261,8 @@ async function loadAthleteInsights() {
 
     try {
         const [readiness, trends] = await Promise.all([
-            fetch(`${API}/athletes/${athleteId}/insights/readiness`).then(r => r.json()),
-            fetch(`${API}/athletes/${athleteId}/analytics/trends`).then(r => r.json()),
+            fetch(`${API}/athletes/${athleteId}/insights/readiness`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json()),
+            fetch(`${API}/athletes/${athleteId}/analytics/trends`, { headers: { 'X-API-KEY': API_KEY } }).then(r => r.json()),
         ]);
 
         if (readiness.error) throw new Error(readiness.error.message);
@@ -354,7 +355,10 @@ function openWhatIfModal(athleteId) {
         try {
             const res = await fetch(`${API}/athletes/${athleteId}/whatif/readiness`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-KEY': API_KEY
+                },
                 body: JSON.stringify(data),
             }).then(r => r.json());
 
@@ -475,7 +479,14 @@ async function handleFormSubmit(e) {
         url = `${API}/athletes/${data.athlete_id}/checkins`;
 
     try {
-        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': API_KEY
+            },
+            body: JSON.stringify(data)
+        });
         const body = await res.json();
 
         if (!res.ok) throw new Error(extractError(body));
@@ -495,7 +506,10 @@ async function deleteItem(type, id) {
     const endpoint = type === 'sleep' ? 'sleep-logs' : type;
 
     try {
-        const res = await fetch(`${API}/${endpoint}/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API}/${endpoint}/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-API-KEY': API_KEY }
+        });
         if (!res.ok) {
             const body = await res.json();
             throw new Error(extractError(body));

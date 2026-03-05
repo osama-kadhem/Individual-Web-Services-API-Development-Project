@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     VERSION: str = "0.6.0"
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: str = "sqlite:///./data/ironmind.db"
+    API_KEY: str = "ironmind_secret_2026"
 
 
 settings = Settings()
