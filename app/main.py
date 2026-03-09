@@ -1,11 +1,15 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.core.errors import (
@@ -15,6 +19,9 @@ from app.core.errors import (
 )
 from app.db.session import engine, Base
 from app.api.v1.api import api_router
+
+# Rate Limiter — 120 requests/minute per IP address
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -55,8 +62,13 @@ app = FastAPI(
         "Built on evidence-based sports science metrics like Acute:Chronic Workload Ratio (ACWR)."
     ),
     docs_url="/docs",
-    redoc_url=None, 
+    redoc_url=None,
 )
+
+# Attach rate limiter state and middleware
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Exception Handlers
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -118,5 +130,7 @@ def root():
     tags=["System"],
     summary="API Health Status",
 )
-def health_check():
+@limiter.limit("30/minute")
+def health_check(request: Request):
+    """Returns the current health and version of the API. Rate-limited to 30/minute."""
     return {"status": "healthy", "version": settings.VERSION}

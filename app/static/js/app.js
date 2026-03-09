@@ -52,10 +52,50 @@ function readinessBandClass(band = '') {
 
 // Initialisation
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchStats();
-    showView('dashboard');
+// Auth Logic
+function validateKey() {
+    const input = document.getElementById('access-key-input').value;
+    const errorMsg = document.getElementById('auth-error');
+
+    if (input === API_KEY) {
+        document.getElementById('login-page').classList.add('login-fade-out');
+        document.querySelector('.app-container').style.display = 'flex';
+        sessionStorage.setItem('ironmind_auth', 'true');
+
+        // Remove login page from DOM after fade animation
+        setTimeout(() => {
+            document.getElementById('login-page').remove();
+        }, 600);
+
+        initApp();
+    } else {
+        errorMsg.style.display = 'block';
+        document.getElementById('access-key-input').value = '';
+    }
+}
+
+// Global initialization logic split from DOMContentLoaded
+async function initApp() {
+    await Promise.all([
+        fetchStats(),
+        showView('dashboard')
+    ]);
     document.getElementById('generic-form').addEventListener('submit', handleFormSubmit);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if previously authenticated in this session
+    if (sessionStorage.getItem('ironmind_auth') === 'true') {
+        const loginPage = document.getElementById('login-page');
+        if (loginPage) loginPage.remove();
+        document.querySelector('.app-container').style.display = 'flex';
+        initApp();
+    }
+
+    // Add enter key listener for login
+    document.getElementById('access-key-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') validateKey();
+    });
 });
 
 // Navigation

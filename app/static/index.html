@@ -12,7 +12,43 @@
 </head>
 
 <body>
-    <div class="app-container">
+    <!-- ── Login Page ── -->
+    <div id="login-page" class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo-icon">IM</div>
+                <h1>IronMind Coach</h1>
+                <p>Advanced Athletic Analytics Platform</p>
+            </div>
+
+            <div class="login-form">
+                <div class="form-group">
+                    <label>Elite Staff Email</label>
+                    <input type="email" id="login-email" placeholder="coach@ironmind.com" value="admin@ironmind.com">
+                </div>
+                <div class="form-group">
+                    <label>Access Key</label>
+                    <input type="password" id="access-key-input" placeholder="••••••••">
+                </div>
+
+                <button class="btn-primary login-btn" onclick="validateKey()">
+                    <span>Sign In to Dashboard</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+                <p id="auth-error" class="login-error">
+                    <i class="fa-solid fa-circle-exclamation"></i> Invalid Access Key
+                </p>
+            </div>
+
+            <div class="login-footer">
+                <p>&copy; 2026 IronMind High-Performance Systems</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden by default until login -->
+    <div class="app-container" style="display: none;">
 
         <!-- ── Sidebar ── -->
         <aside class="sidebar">
