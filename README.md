@@ -11,7 +11,11 @@ A specialized REST API for high-performance triathlon training, recovery trackin
 - **Recovery Tracking**: Log daily sleep duration and quality, plus subjective wellness check-ins (fatigue, stress, mood, soreness).
 - **Readiness Insights**: Real-time analysis using Acute:Chronic Workload Ratio (ACWR) to project injury risk and performance readiness.
 - **Predictive Simulator**: "What-If" simulator to project how planned training and sleep will affect future readiness scores.
+- **Training Prescription**: Evidence-based weekly training plan (Rest / Recover / Maintain / Build) derived from live ACWR.
+- **Coach Roster**: Squad-level overview with every athlete's live readiness score, sorted worst-first.
 - **Training Analytics**: 14-day load distribution and trend summaries.
+- **MCP Endpoint**: AI agent-compatible tool definitions (Model Context Protocol).
+- **Rate Limiting**: 120 requests/minute per IP via slowapi.
 - **Professional Docs**: Interactive API consoles via customized Swagger UI and ReDoc.
 
 ---
@@ -20,9 +24,10 @@ A specialized REST API for high-performance triathlon training, recovery trackin
 
 - **FastAPI**: Performance-focused modern web framework.
 - **SQLAlchemy**: Robust ORM for database management.
-- **Pydantic**: Data validation and schema definition.
+- **Pydantic v2**: Data validation and schema definition.
 - **SQLite**: Relational database storage.
-- **Pytest**: Comprehensive test suite (89 tests).
+- **slowapi**: Rate limiting middleware.
+- **Pytest**: Comprehensive test suite (40 tests).
 - **Uvicorn**: High-performance ASGI server.
 
 ---
@@ -86,6 +91,7 @@ The platform provides two interactive documentation interfaces:
 
 - **Interactive Console (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Reference Manual (ReDoc)**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **User Manual**: [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
 
 ---
 
@@ -113,8 +119,8 @@ The API returns standardized JSON error envelopes:
 
 ## 🧪 Quality Assurance
 
-We maintain a comprehensive test suite with 89 integration and unit tests covering all core logic, validation rules, and analytics.
+We maintain a comprehensive test suite with **40 integration tests** covering all core logic, validation rules, and analytics.
 
 ```bash
-pytest tests/ -v
+./venv/bin/pytest tests/ -v
 ```

@@ -107,6 +107,105 @@
             font-family: var(--sans);
             color: var(--text-muted);
         }
+
+        /* Print Button */
+        .print-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: var(--sans);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s;
+        }
+
+        .print-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* ===================== PRINT STYLES ===================== */
+        @media print {
+
+            /* Hide chrome */
+            #topbar {
+                display: none !important;
+            }
+
+            /* Hide ReDoc sidebar entirely */
+            .menu-content,
+            [class*="SideMenu"],
+            [class*="sidebar"],
+            redoc>div>div:first-child {
+                display: none !important;
+            }
+
+            /* Make main content full width */
+            redoc,
+            .redoc-wrap,
+            [class*="api-content"],
+            [class*="middle-panel"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Turn dark right panel white */
+            [class*="right-panel"],
+            [class*="ResponseSamples"],
+            [class*="dark"] {
+                background: #ffffff !important;
+                color: #1e293b !important;
+            }
+
+            /* Make all code blocks legible */
+            pre,
+            code,
+            [class*="CodeSample"],
+            [class*="code-box"] {
+                background: #f8fafc !important;
+                color: #1e293b !important;
+                border: 1px solid #e2e8f0 !important;
+                white-space: pre-wrap !important;
+                word-break: break-word !important;
+                font-size: 11px !important;
+            }
+
+            /* Expand all collapsed sections */
+            [class*="operation-type"],
+            [class*="OperationContainer"],
+            details {
+                display: block !important;
+            }
+
+            /* Page break rules */
+            h1,
+            h2,
+            h3 {
+                page-break-after: avoid;
+            }
+
+            table,
+            pre {
+                page-break-inside: avoid;
+            }
+
+            /* Page margins */
+            @page {
+                margin: 1.5cm;
+                size: A4;
+            }
+
+            body {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 
@@ -121,6 +220,7 @@
             <a href="/">Dashboard</a>
             <a href="/docs">Console</a>
             <a href="/redoc" class="active">API Reference</a>
+            <button class="print-btn" onclick="window.print()">🖨 Print to PDF</button>
         </div>
     </div>
 
@@ -228,7 +328,92 @@
             pathInMiddlePanel: true,
             requiredPropsFirst: true,
             noAutoAuth: true,
+            expandResponses: "all",
         }, document.getElementById('redoc-container'));
+    </script>
+
+    <script>
+        // ── Print Preparation ──────────────────────────────────────────────
+        // ReDoc uses hashed/generated class names so @media print selectors
+        // are unreliable. Instead we inject a targeted <style> just before
+        // the browser opens the print dialog, then remove it after.
+
+        function injectPrintStyles() {
+            const existing = document.getElementById('ironmind-print-style');
+            if (existing) existing.remove();
+
+            // Find ReDoc's internal layout elements by DOM position
+            const redocWrap = document.querySelector('#redoc-container > redoc > div');
+            if (redocWrap) {
+                const children = redocWrap.children;
+                // child[0] = sidebar, child[1] = main content, child[2] = right dark panel
+                if (children[0]) children[0].setAttribute('data-print-hide', 'sidebar');
+                if (children[2]) children[2].setAttribute('data-print-hide', 'rightpanel');
+            }
+
+            const style = document.createElement('style');
+            style.id = 'ironmind-print-style';
+            style.textContent = `
+                @media print {
+                    #topbar { display: none !important; }
+
+                    [data-print-hide] { display: none !important; }
+
+                    #redoc-container > redoc > div {
+                        display: block !important;
+                        width: 100% !important;
+                    }
+
+                    #redoc-container > redoc > div > div:nth-child(2) {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                    }
+
+                    /* Force all backgrounds white */
+                    * {
+                        background: #fff !important;
+                        color: #1e293b !important;
+                        box-shadow: none !important;
+                    }
+
+                    pre, code {
+                        background: #f8fafc !important;
+                        color: #1e293b !important;
+                        border: 1px solid #e2e8f0 !important;
+                        font-size: 10px !important;
+                        white-space: pre-wrap !important;
+                        word-break: break-word !important;
+                    }
+
+                    h1, h2, h3 { page-break-after: avoid; }
+                    table, pre  { page-break-inside: avoid; }
+
+                    @page { margin: 1.5cm; size: A4; }
+                    body { font-size: 12px !important; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function cleanupPrintStyles() {
+            // Remove data attributes
+            document.querySelectorAll('[data-print-hide]').forEach(el => {
+                el.removeAttribute('data-print-hide');
+            });
+            const style = document.getElementById('ironmind-print-style');
+            if (style) style.remove();
+        }
+
+        window.addEventListener('beforeprint', injectPrintStyles);
+        window.addEventListener('afterprint', cleanupPrintStyles);
+
+        // Also wire the print button
+        document.querySelector('.print-btn').addEventListener('click', function () {
+            injectPrintStyles();
+            setTimeout(() => window.print(), 100);
+        });
     </script>
 </body>
 
