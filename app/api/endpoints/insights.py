@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from datetime import date
 from typing import Optional
 from app.db.session import get_db
-from app.schemas.insights import ReadinessInsight, AnalyticsTrends, WhatIfRequest, WhatIfResponse
+from app.schemas.insights import (
+    ReadinessInsight, AnalyticsTrends, WhatIfRequest, WhatIfResponse,
+    TrainingPrescription,
+)
 from app.services import insights as insight_service
 from app.crud import crud_athlete
 
@@ -79,3 +82,21 @@ def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Dep
         projected_readiness=projected,
         change_description=desc
     )
+
+
+@router.get(
+    "/{athlete_id}/training-prescription",
+    response_model=TrainingPrescription,
+    summary="Get training prescription",
+    description=(
+        "Generates a structured weekly training prescription derived from the athlete's "
+        "current ACWR and readiness score. Returns a tier (Rest / Recover / Maintain / Build), "
+        "a target session count, an intensity (RPE) cap, a load-change percentage, "
+        "and an evidence-based rationale."
+    ),
+)
+def get_training_prescription(athlete_id: int, db: Session = Depends(get_db)):
+    athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+    return insight_service.get_training_prescription(db, athlete_id=athlete_id)

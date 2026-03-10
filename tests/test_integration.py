@@ -346,6 +346,103 @@ class TestMCPEndpoint:
             assert "returns" in tool
 
 
+class TestTrainingPrescription:
+    """Verifies the training prescription endpoint logic."""
+
+    VALID_TIERS = {"Rest", "Recover", "Maintain", "Build"}
+
+    def test_prescription_structure(self, client):
+        """Response must contain all required prescription fields."""
+        ath = make_athlete(client)
+        res = client.get(f"/api/v1/athletes/{ath['id']}/training-prescription")
+        assert res.status_code == 200
+        body = res.json()
+        assert "prescription" in body
+        assert body["prescription"] in self.VALID_TIERS
+        assert "target_weekly_sessions" in body
+        assert "max_session_intensity" in body
+        assert "target_load_change_pct" in body
+        assert "rationale" in body
+        assert "acwr" in body
+        assert "links" in body
+
+    def test_prescription_404_for_unknown_athlete(self, client):
+        """Must return 404 for a non-existent athlete."""
+        res = client.get("/api/v1/athletes/999999/training-prescription")
+        assert res.status_code == 404
+
+    def test_prescription_hateoas_links(self, client):
+        """Links block must reference self, readiness, and trends."""
+        ath = make_athlete(client)
+        res = client.get(f"/api/v1/athletes/{ath['id']}/training-prescription")
+        links = res.json()["links"]
+        assert "self" in links
+        assert "readiness" in links
+        assert "trends" in links
+
+    def test_recover_tier_on_high_acwr(self, client):
+        """When an athlete has a very high acute load, prescription must be Recover."""
+        ath = make_athlete(client)
+        # Build chronic base over 28 days at low load
+        for i in range(2, 29):
+            make_session(client, ath["id"], duration=20, intensity=3, days_ago=i)
+        # Spike acute load (last 7 days) dramatically
+        for i in range(0, 7):
+            make_session(client, ath["id"], duration=120, intensity=10, days_ago=i)
+        res = client.get(f"/api/v1/athletes/{ath['id']}/training-prescription")
+        assert res.json()["prescription"] in ("Recover", "Rest")
+
+
+class TestCoachRoster:
+    """Verifies the coaches roster endpoint."""
+
+    def test_empty_roster(self, client):
+        """Roster must return valid structure even with no athletes."""
+        res = client.get("/api/v1/coaches/roster")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["total_athletes"] == 0
+        assert body["roster"] == []
+        assert "links" in body
+
+    def test_roster_with_athletes(self, client):
+        """Roster must list all registered athletes with required fields."""
+        make_athlete(client, name="Athlete One", email="one@test.com")
+        make_athlete(client, name="Athlete Two", email="two@test.com")
+        res = client.get("/api/v1/coaches/roster")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["total_athletes"] == 2
+        assert len(body["roster"]) == 2
+
+    def test_roster_entry_fields(self, client):
+        """Each roster entry must have all required fields."""
+        make_athlete(client, name="Solo", email="solo@test.com")
+        entry = client.get("/api/v1/coaches/roster").json()["roster"][0]
+        assert "athlete_id" in entry
+        assert "name" in entry
+        assert "email" in entry
+        assert "readiness_score" in entry
+        assert "readiness_band" in entry
+        assert "acwr" in entry
+        assert "prescription" in entry
+
+    def test_roster_sorted_by_readiness(self, client):
+        """Athletes with lower readiness scores must appear first."""
+        make_athlete(client, name="A1", email="a1@test.com")
+        make_athlete(client, name="A2", email="a2@test.com")
+        roster = client.get("/api/v1/coaches/roster").json()["roster"]
+        scores = [e["readiness_score"] for e in roster]
+        assert scores == sorted(scores)
+
+    def test_roster_band_counts(self, client):
+        """Band counts must sum to total_athletes."""
+        make_athlete(client, name="X", email="x@test.com")
+        body = client.get("/api/v1/coaches/roster").json()
+        total = body["high_readiness"] + body["medium_readiness"] + body["low_readiness"]
+        assert total == body["total_athletes"]
+
+
 def test_system_status(client):
     res = client.get("/health")
     assert res.status_code == 200

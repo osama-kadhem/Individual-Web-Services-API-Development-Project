@@ -35,3 +35,37 @@ class WhatIfResponse(BaseModel):
     original_readiness: ReadinessInsight
     projected_readiness: ReadinessInsight
     change_description: str
+
+
+class TrainingPrescription(BaseModel):
+    """Evidence-based weekly training recommendation derived from ACWR and readiness."""
+    athlete_id: int
+    date: date
+    acwr: float
+    readiness_score: int
+    prescription: str           # e.g. "Build", "Maintain", "Recover", "Rest"
+    target_weekly_sessions: int
+    max_session_intensity: int  # RPE cap (1-10)
+    target_load_change_pct: float  # e.g. +10.0 or -20.0
+    rationale: str
+    links: Dict[str, str]
+
+
+class RosterEntry(BaseModel):
+    """Compact athlete + live readiness summary for the coach's roster view."""
+    athlete_id: int
+    name: str
+    email: str
+    readiness_score: int
+    readiness_band: str
+    acwr: float
+    prescription: str
+
+
+class CoachRoster(BaseModel):
+    total_athletes: int
+    high_readiness: int
+    medium_readiness: int
+    low_readiness: int
+    roster: List[RosterEntry]
+    links: Dict[str, str]

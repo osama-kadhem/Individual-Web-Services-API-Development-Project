@@ -48,6 +48,10 @@ tags_metadata = [
         "description": "Daily subjective wellness tracking including fatigue, stress, and mood.",
     },
     {
+        "name": "Coaches",
+        "description": "Squad-level oversight: full roster with live readiness scores and training prescriptions.",
+    },
+    {
         "name": "System",
         "description": "Core API health and versioning information.",
     },
