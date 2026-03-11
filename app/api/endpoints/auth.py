@@ -2,17 +2,17 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.api import deps
+from app.db.session import get_db
 from app.core import auth
 from app.core.config import settings
 from app.schemas.token import Token
-from app.crud import athlete as crud_athlete
+from app.crud import crud_athlete
 
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
 def login_access_token(
-    db: Session = Depends(deps.get_db),
+    db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Token:
     """

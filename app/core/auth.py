@@ -3,7 +3,7 @@ from typing import Optional, List
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status, Security
-from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader, APIKeyQuery
 from app.core.config import settings
 from app.schemas.token import TokenData
 
@@ -12,11 +12,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/auth/login"
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False
 )
 
-# Legacy API Key header for backward compatibility
+# Legacy API Key header/query for backward compatibility
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+api_key_query = APIKeyQuery(name="X-API-KEY", auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against its hash."""
@@ -39,14 +41,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 async def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
-    api_key: Optional[str] = Security(api_key_header)
+    api_key_h: Optional[str] = Security(api_key_header),
+    api_key_q: Optional[str] = Security(api_key_query)
 ) -> TokenData:
     """
     Validates either a JWT token or a master API key.
     Returns TokenData containing the user's email and role.
     """
     # 1. Check master API key (Legacy/Admin bypass)
-    if api_key == settings.API_KEY:
+    if api_key_h == settings.API_KEY or api_key_q == settings.API_KEY:
         return TokenData(email="admin@ironmind.com", role="coach")
 
     # 2. Check JWT Token

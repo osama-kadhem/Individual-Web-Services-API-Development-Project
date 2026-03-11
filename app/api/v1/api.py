@@ -1,3 +1,4 @@
+from fastapi import APIRouter, Depends
 from app.api.endpoints import auth, athletes, sessions, sleep_logs, checkins, insights, mcp, coaches
 from app.core.auth import get_current_user, RoleChecker
 
