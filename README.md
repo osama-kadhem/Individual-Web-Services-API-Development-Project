@@ -9,16 +9,23 @@
 
 ---
 
-## 🌐 Live Infrastructure
+## 🌐 Infrastructure & Access
 
-| Environment | Endpoint |
+### 🚀 Production (Live Deployment)
+| Service | Endpoint |
 | :--- | :--- |
-| **🚀 SPA Dashboard** | [https://osamakadhem.pythonanywhere.com](https://osamakadhem.pythonanywhere.com) |
-| **📜 Interactive Swagger UI** | [https://osamakadhem.pythonanywhere.com/docs](https://osamakadhem.pythonanywhere.com/docs) |
-| **📘 ReDoc API Reference** | [https://osamakadhem.pythonanywhere.com/redoc](https://osamakadhem.pythonanywhere.com/redoc) |
-| **💓 Health Metrics** | [https://osamakadhem.pythonanywhere.com/health](https://osamakadhem.pythonanywhere.com/health) |
+| **Dashboard** | [https://osamakadhem.pythonanywhere.com](https://osamakadhem.pythonanywhere.com) |
+| **Swagger UI** | [https://osamakadhem.pythonanywhere.com/docs](https://osamakadhem.pythonanywhere.com/docs) |
+| **ReDoc Reference** | [https://osamakadhem.pythonanywhere.com/redoc](https://osamakadhem.pythonanywhere.com/redoc) |
+| **Health Metrics** | [https://osamakadhem.pythonanywhere.com/health](https://osamakadhem.pythonanywhere.com/health) |
 
-**Authentication Credentials:**
+### 🛠️ Local Development (Mac/PC)
+Once running locally (see Setup below), access these endpoints:
+*   **Dashboard**: [http://localhost:8000](http://localhost:8000)
+*   **Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+*   **Reference Manual**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+**Credentials:**
 *   **Master Access Key:** `ironmind_secret_2026` (Use for Dashboard/Swagger `X-API-KEY` header).
 *   **Modern Auth:** Use the `/api/v1/auth/login` endpoint to receive a stateless **JWT Bearer Token**.
 
@@ -28,42 +35,45 @@
 This project extends the initial requirements with high-tier features designed to meet "Advanced Data Integration" and "Professional Implementation" rubrics.
 
 ### 🌡️ 1. Environment-Aware Readiness (External API Integration)
-The API dynamically queries the **OpenWeatherMap API** for an athlete's city. Unlike static trackers, IronMind applies "Environmental Stress Penalties" to the Readiness Score:
-*   **Heat Stress**: Prevents over-exertion in temperatures **>30°C** (-20 pts).
-*   **Humidity Stress**: Monitors cardiovascular strain in high-humidity zones (-10 pts).
-*   *Implementation: Uses asynchronous `httpx` for non-blocking external requests.*
+The API dynamically queries the **OpenWeatherMap API** for an athlete's city. It applies "Environmental Stress Penalties" to the Readiness Score:
+*   **Heat Stress**: Penalizes scores in temperatures **>30°C** (-20 pts).
+*   **Humidity Stress**: Adjusts for extra cardiovascular strain in high-humidity zones (-10 pts).
 
 ### 📈 2. Interactive Load-Trends (Visual Analytics)
-The dashboard integrates **Chart.js** to visualize the **14-day training load distribution**. This allows coaches to identify "spikes" in training intensity that lead to injury.
+The dashboard integrates **Chart.js** to visualize the **14-day training load distribution**. This provides visual evidence for identifies "spikes" in training intensity.
 
 ### 🔐 3. Security Hardening (JWT + RBAC)
-*   **Encryption**: Passwords hashed using **Bcrypt** (Salted & Hashed).
+*   **Encryption**: Passwords secured using **Bcrypt** hashing.
 *   **RBAC**: Implements **Role-Based Access Control**. `Coach` roles see squad-level rosters, while `Athlete` roles are restricted to personal metrics.
 
-### � 4. Automated ETL & Portability
+### 📥 4. Automated ETL & Portability
 *   **Kaggle Integration**: A custom ETL script standardizes and imports the "Athlete Training Tracker" dataset.
 *   **Data Portability**: A dedicated `GET /export` endpoint generates real-time **CSV downloads** of training history.
 
 ---
 
-## 📁 System Architecture
+## 🏗️ System Architecture
 
 ```text
 ├── app/
-│   ├── api/ v1/        # Central router with Dependency Injection
-│   ├── core/           # Auth logic (JWT/API-Key), Config, and JSON Error Envelopes
-│   ├── models/         # SQLAlchemy ORM definitions (Athletes, Sessions, Sleep, Checkins)
-│   ├── schemas/        # Strict Pydantic v2 data validation
-│   ├── services/       # Business Logic: ACWR Engine & Weather Analytics
-│   └── static/         # Vanilla JS SPA Dashboard with Chart.js
-├── scripts/            # Database initialization and Kaggle ETL loaders
-├── docs/               # User Manual and Automated PDF Documentation
-└── tests/              # 40+ Integration/Logic tests (Pytest)
+│   ├── api/
+│   │   ├── endpoints/       # Athlete, Sessions, Sleep, Checkins, Insights, Coaches
+│   │   └── v1/api.py        # Central Router with Dependency Injection
+│   ├── core/                # JWT Auth, Bcrypt Hashing, pydantic-settings
+│   ├── crud/                # Encapsulated database access patterns
+│   ├── models/              # SQLAlchemy ORM definitions
+│   ├── schemas/             # Strict Pydantic v2 request/response schemas
+│   ├── services/            # ACWR Engine & Weather Analytics Logic
+│   └── static/              # SPA Frontend (HTML5 / Vanilla JS / Chart.js)
+├── scripts/                 # ETL Importers (Kaggle) & DB Initializers
+├── data/                    # Local SQLite storage and raw Kaggle CSVs
+├── docs/                    # User Manual and Automated API Documentation
+└── tests/                   # 40+ Integration/Critical Path tests (Pytest)
 ```
 
 ---
 
-## 📊 Core Concepts: The Science of Readiness
+## 📊 Core Science Concepts
 
 ### 1. Acute:Chronic Workload Ratio (ACWR)
 IronMind calculates training risk by comparing the last **7 days** of load (Acute) against the average of the last **28 days** (Chronic).
@@ -71,10 +81,8 @@ IronMind calculates training risk by comparing the last **7 days** of load (Acut
 *   **The "Danger Zone" (> 1.5)**: High injury risk detected.
 
 ### 2. Evidence-Based Prescription
-Based on **Gabbett (2016)**, the API automatically generates training tiers:
-*   **Rest**: Readiness < 40.
-*   **Recover**: ACWR detected in danger zone.
-*   **Maintain/Build**: Optimal readiness and load balance.
+Based on **Gabbett (2016)**, the API automatically generates training recommendations:
+*   **Rest / Recover / Maintain / Build** tiers derived from live readiness.
 
 ---
 
@@ -90,27 +98,30 @@ pip install -r config/requirements.txt
 
 ### 2. Run Locally
 ```bash
-# Initialize database and import 1,000 Kaggle records
+# Initialize database tables
 PYTHONPATH=. python scripts/init_db.py
+
+# Import 1,000 Kaggle records into SQLite
 PYTHONPATH=. python scripts/import_dataset.py
 
-# Launch the server
+# Launch the FastAPI server
 ./venv/bin/uvicorn app.main:app --reload
 ```
 
 ---
 
-## � Academic References
-Integrated logic is supported by the following sports science consensus:
+## 🔬 Academic References
+Integrated logic is supported by the following sports science consensus and datasets:
 
 1.  **Gabbett, T.J. (2016)** 'The training—injury prevention paradox: should athletes be training smarter and harder?', *British Journal of Sports Medicine*.
 2.  **Racinais, S., et al. (2015)** 'Consensus recommendations on training and competing in the heat', *BJSM*.
-3.  **OpenWeather (2026)** *Current weather data API*. Available at: https://openweathermap.org/api.
+3.  **Kaggle Dataset (2024)** 'Athlete Training and Recovery Tracker Dataset'. Available at: [Kaggle](https://www.kaggle.com/datasets/prince7489/athlete-training-and-recovery-tracker-dataset).
+4.  **OpenWeather (2026)** *Current weather data API*. Available at: https://openweathermap.org/api.
 
 ---
 
 ## 📖 Component Documentation
-*   📘 **[User Manual](docs/USER_MANUAL.md)**: How to use the API and Dashboard.
+*   📘 **[User Manual](docs/USER_MANUAL.md)**: Feature walkthrough and API guide.
 *   📕 **[API Reference](https://osamakadhem.pythonanywhere.com/redoc)**: Technical endpoint definitions.
 *   🧪 **[Test Suite](tests/test_integration.py)**: Evidence of 40 passing integration tests.
 
