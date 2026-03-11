@@ -19,7 +19,7 @@ router = APIRouter()
     summary="Get athlete readiness",
     description="Calculates training readiness using Acute:Chronic Workload Ratio (ACWR) and recovery metrics.",
 )
-def get_readiness_insight(
+async def get_readiness_insight(
     athlete_id: int,
     target_date: Optional[date] = Query(None, description="Reference date for analysis (defaults to today)."),
     db: Session = Depends(get_db)
@@ -29,7 +29,7 @@ def get_readiness_insight(
         raise HTTPException(status_code=404, detail="Athlete not found")
     
     analysis_date = target_date or date.today()
-    return insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=analysis_date)
+    return await insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=analysis_date)
 
 
 @router.get(
@@ -52,7 +52,7 @@ def get_training_trends(athlete_id: int, db: Session = Depends(get_db)):
     summary="Simulate future readiness",
     description="Projects health scores based on planned training sessions and expected sleep.",
 )
-def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Depends(get_db)):
+async def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
@@ -60,10 +60,10 @@ def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Dep
     today = date.today()
     
     # Original baseline
-    original = insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=today)
+    original = await insight_service.compute_readiness(db, athlete_id=athlete_id, target_date=today)
     
     # Projected
-    projected = insight_service.compute_readiness(
+    projected = await insight_service.compute_readiness(
         db, 
         athlete_id=athlete_id, 
         target_date=today,
@@ -95,8 +95,8 @@ def simulate_readiness(athlete_id: int, whatif: WhatIfRequest, db: Session = Dep
         "and an evidence-based rationale."
     ),
 )
-def get_training_prescription(athlete_id: int, db: Session = Depends(get_db)):
+async def get_training_prescription(athlete_id: int, db: Session = Depends(get_db)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
-    return insight_service.get_training_prescription(db, athlete_id=athlete_id)
+    return await insight_service.get_training_prescription(db, athlete_id=athlete_id)

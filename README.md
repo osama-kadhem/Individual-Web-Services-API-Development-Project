@@ -37,8 +37,12 @@
 - **Athlete Management** — Full CRUD lifecycle with unique email validation and age bounds (10–120)
 - **Training Sessions** — Log sessions across Swim, Bike, Run with RPE (1–10) and duration tracking
 - **Recovery Tracking** — Daily sleep logs (0–24h) and wellness check-ins (fatigue, stress, mood, soreness 1–10)
-- **Readiness Insights** — Real-time ACWR-based readiness scores (0–100) with impact reasons and HATEOAS links
-- **What-If Simulator** — Projects future readiness from planned session + sleep parameters
+- **Advanced ACWR Scoring**: Uses training history to flag overtraining risks (Gabbett's 0.8–1.3 optimal window).
+- **Environment-Aware Readiness**: Real-time weather integration (OpenWeatherMap) that penalizes scores during extreme heat (>30°C).
+- **Interactive Visual Analytics**: 14-day training load trends visualized via Chart.js for pattern recognition.
+- **Data Portability**: Automated CSV export for athletes to download their full performance history.
+- **Security Hardening**: Professional JWT authentication with Role-Based Access Control (RBAC).
+- **Simulation Mode**: "What-If" engine to project future health scores based on planned workloads.
 - **Training Prescription** — Evidence-based weekly plan (Rest / Recover / Maintain / Build) derived from live ACWR
 - **Coach Roster** — Squad-level overview sorted by readiness score, with band-level counts
 - **Training Trends** — 14-day load history and averages

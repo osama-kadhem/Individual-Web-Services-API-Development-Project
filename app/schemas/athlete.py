@@ -9,6 +9,7 @@ class AthleteBase(BaseModel):
     email: EmailStr
     age: Optional[int] = Field(None, ge=10, le=120, description="Age in years (10–120)")
     role: str = Field("athlete", pattern="^(athlete|coach)$", description="Role: 'athlete' or 'coach'")
+    city: str = Field("Leeds", min_length=1, max_length=100, description="Athlete's current city")
 
     @field_validator("name")
     @classmethod
@@ -28,6 +29,7 @@ class AthleteUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=120)
     email: Optional[EmailStr] = None
     age: Optional[int] = Field(None, ge=10, le=120)
+    city: Optional[str] = Field(None, min_length=1, max_length=100)
 
     @field_validator("name")
     @classmethod

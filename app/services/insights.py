@@ -7,6 +7,7 @@ from app.schemas.insights import (
     ReadinessInsight, ImpactReason, AnalyticsTrends, LoadTrend,
     TrainingPrescription, RosterEntry, CoachRoster,
 )
+from app.services.weather import get_current_weather
 
 # Sports Science Metrics & References:
 # [1] Gabbett, T.J. (2016) ACWR thresholds for injury prevention.
@@ -34,7 +35,7 @@ def get_training_load_history(db: Session, athlete_id: int, days: int, target_da
     return history
 
 
-def compute_readiness(
+async def compute_readiness(
     db: Session, 
     athlete_id: int, 
     target_date: date,
@@ -89,6 +90,25 @@ def compute_readiness(
         score += 5
         reasons.append(ImpactReason(reason="High sleep quality", impact=5))
 
+    # 4. Weather Factors (External API Integration)
+    athlete = db.query(Athlete).filter(Athlete.id == athlete_id).first()
+    weather_info = None
+    if athlete and athlete.city:
+        weather_info = await get_current_weather(athlete.city)
+        if weather_info:
+            if weather_info["temp"] > 30.0:
+                score -= 20
+                reasons.append(ImpactReason(
+                    reason=f"Extreme Heat Stress ({weather_info['temp']}°C in {athlete.city})", 
+                    impact=-20
+                ))
+            if weather_info["humidity"] > 80.0:
+                score -= 10
+                reasons.append(ImpactReason(
+                    reason=f"High Humidity Stress ({weather_info['humidity']}% in {athlete.city})", 
+                    impact=-10
+                ))
+
     # Final normalization
     final_score = max(0, min(100, int(score)))
     band = "High" if final_score >= 80 else ("Medium" if final_score >= 50 else "Low")
@@ -103,7 +123,8 @@ def compute_readiness(
             "chronic_load_28d": round(chronic_load * 7, 1), # scaled to weekly avg
             "acwr": acwr,
             "sleep_hours": sleep_hrs,
-            "sleep_quality": sleep_qual
+            "sleep_quality": sleep_qual,
+            "weather": weather_info
         },
         top_reasons=reasons,
         links={
@@ -141,7 +162,7 @@ def get_analytics(db: Session, athlete_id: int) -> AnalyticsTrends:
     )
 
 
-def get_training_prescription(db: Session, athlete_id: int) -> TrainingPrescription:
+async def get_training_prescription(db: Session, athlete_id: int) -> TrainingPrescription:
     """
     Derives a structured weekly training prescription from the athlete's current
     ACWR and readiness score.
@@ -153,7 +174,7 @@ def get_training_prescription(db: Session, athlete_id: int) -> TrainingPrescript
     - Build:    ACWR < 0.8     → increase load by 10%, cap RPE at 9
     """
     today = date.today()
-    readiness = compute_readiness(db, athlete_id=athlete_id, target_date=today)
+    readiness = await compute_readiness(db, athlete_id=athlete_id, target_date=today)
     acwr = readiness.signals["acwr"]
     score = readiness.readiness_score
 
@@ -213,7 +234,7 @@ def get_training_prescription(db: Session, athlete_id: int) -> TrainingPrescript
     )
 
 
-def get_coach_roster(db: Session) -> CoachRoster:
+async def get_coach_roster(db: Session) -> CoachRoster:
     """
     Returns a full coaching overview: every athlete with their live readiness
     score, band, ACWR, and training prescription — sorted by readiness score
@@ -224,8 +245,8 @@ def get_coach_roster(db: Session) -> CoachRoster:
     roster_entries = []
 
     for athlete in athletes:
-        readiness = compute_readiness(db, athlete_id=athlete.id, target_date=today)
-        prescription_obj = get_training_prescription(db, athlete_id=athlete.id)
+        readiness = await compute_readiness(db, athlete_id=athlete.id, target_date=today)
+        prescription_obj = await get_training_prescription(db, athlete_id=athlete.id)
         roster_entries.append(RosterEntry(
             athlete_id=athlete.id,
             name=athlete.name,

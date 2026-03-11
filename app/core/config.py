@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: str = "sqlite:///./data/ironmind.db"
     API_KEY: str = "ironmind_secret_2026"
+    OPENWEATHER_API_KEY: str = "your_openweather_key_here"
     
     # JWT Settings
     SECRET_KEY: str = "super_secret_ironmind_key_2026_leeds_com3011"

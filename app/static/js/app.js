@@ -326,7 +326,23 @@ function renderInsightsDashboard(readiness, trends) {
             </span>
         </div>`).join('');
 
+    const weather = readiness.signals.weather;
+    const weatherHtml = weather ? `
+        <div style="background:rgba(255,255,255,0.05);padding:10px 14px;border-radius:10px;margin-bottom:1.5rem;display:flex;align-items:center,gap:12px;border-left:4px solid ${weather.temp > 30 ? 'var(--red)' : 'var(--blue)'}">
+            <i class="fa-solid ${weather.temp > 30 ? 'fa-temperature-high' : 'fa-cloud-sun'}" style="font-size:1.2rem;color:${weather.temp > 30 ? 'var(--red)' : 'var(--blue)'}"></i>
+            <div style="flex:1">
+                <div style="font-size:.85rem;font-weight:700">Live Weather: ${readiness.signals.weather.description}</div>
+                <div style="font-size:.75rem;color:var(--text-muted)">${weather.temp}°C | ${weather.humidity}% Humidity in ${readiness.signals.weather.is_mock ? 'Mock Location' : 'Local Area'}</div>
+            </div>
+            ${weather.temp > 30 ? '<span class="badge red">HEAT ALERT</span>' : ''}
+        </div>` : '';
+
     result.innerHTML = `
+        <div style="margin-bottom:2rem; text-align:right">
+            <button class="btn-ghost" onclick="downloadAthleteData(${readiness.athlete_id})">
+                <i class="fa-solid fa-file-csv"></i> Download Training History (CSV)
+            </button>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;text-align:left">
 
             <!-- Score card -->
@@ -342,6 +358,7 @@ function renderInsightsDashboard(readiness, trends) {
 
             <!-- Signals card -->
             <div class="stat-card">
+                ${weatherHtml}
                 <p style="color:var(--text-muted);margin-bottom:1rem;font-weight:600;font-size:.9rem">Training Signals</p>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
                     ${[
@@ -361,7 +378,64 @@ function renderInsightsDashboard(readiness, trends) {
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Try What-If Simulator
                 </button>
             </div>
+        </div>
+        
+        <!-- Chart Section -->
+        <div class="stat-card" style="margin-top:2rem; text-align:left">
+             <p style="color:var(--text-muted);margin-bottom:1.5rem;font-weight:600;font-size:.9rem">14-Day Load Distribution</p>
+             <div style="height:300px; position:relative">
+                <canvas id="loadChart"></canvas>
+             </div>
         </div>`;
+
+    setTimeout(() => renderLoadChart(trends), 50);
+}
+
+function downloadAthleteData(id) {
+    window.location.href = `${API}/athletes/${id}/export?X-API-KEY=${API_KEY}`;
+}
+
+let activeChart = null;
+function renderLoadChart(data) {
+    const ctx = document.getElementById('loadChart').getContext('2d');
+    if (activeChart) activeChart.destroy();
+
+    const labels = data.trends.map(t => fmtDate(t.date));
+    const values = data.trends.map(t => t.load);
+
+    activeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Training Load (sRPE)',
+                data: values,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#6366f1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: 'rgba(255,255,255,0.5)' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255,255,255,0.5)', maxRotation: 0 }
+                }
+            }
+        }
+    });
 }
 
 // What-If modal

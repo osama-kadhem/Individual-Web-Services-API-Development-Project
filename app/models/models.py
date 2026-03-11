@@ -13,6 +13,7 @@ class Athlete(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=True) # Allow null temporarily for old data
     role = Column(String, default="athlete") # "athlete" or "coach"
+    city = Column(String, default="Leeds")
     age = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
     

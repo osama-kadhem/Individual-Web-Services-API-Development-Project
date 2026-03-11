@@ -7,6 +7,9 @@ from app.schemas.sleep_log import SleepLog, SleepLogCreate
 from app.schemas.checkin import CheckIn, CheckInCreate
 from app.crud import crud_athlete, crud_sleep, crud_checkin
 from app.core.auth import get_current_user
+import csv
+import io
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -123,3 +126,39 @@ def create_athlete_checkin(athlete_id: int, checkin_in: CheckInCreate, db: Sessi
     
     checkin_in.athlete_id = athlete_id
     return crud_checkin.create_checkin(db=db, checkin=checkin_in)
+
+
+@router.get(
+    "/{athlete_id}/export",
+    summary="Export athlete data to CSV",
+    description="Generates a downloadable CSV file of all training sessions for an athlete.",
+)
+def export_athlete_data(athlete_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(["Date", "Sport", "Duration (min)", "Intensity (RPE)", "Distance (km)"])
+    
+    # Data
+    for session in athlete.sessions:
+        writer.writerow([
+            session.date.strftime('%Y-%m-%d') if session.date else "",
+            session.sport,
+            session.duration,
+            session.intensity,
+            session.distance
+        ])
+    
+    output.seek(0)
+    
+    filename = f"athlete_{athlete_id}_export.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

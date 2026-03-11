@@ -18,5 +18,5 @@ router = APIRouter()
         "Also returns band-level counts (High / Medium / Low) for a quick squad overview."
     ),
 )
-def get_roster(db: Session = Depends(get_db)):
-    return insight_service.get_coach_roster(db)
+async def get_roster(db: Session = Depends(get_db)):
+    return await insight_service.get_coach_roster(db)

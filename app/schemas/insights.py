@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 class ImpactReason(BaseModel):
     reason: str
@@ -11,7 +11,7 @@ class ReadinessInsight(BaseModel):
     date: date
     readiness_score: int = Field(..., ge=0, le=100)
     readiness_band: str  # "Low", "Medium", "High"
-    signals: Dict[str, float]  # 7-day load, 28-day avg, last sleep, etc.
+    signals: Dict[str, Any]  # 7-day load, 28-day avg, weather info, etc.
     top_reasons: List[ImpactReason]
     links: Dict[str, str]  # HATEOAS
 
