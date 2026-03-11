@@ -8,6 +8,7 @@ class AthleteBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=120, description="Athlete's full name")
     email: EmailStr
     age: Optional[int] = Field(None, ge=10, le=120, description="Age in years (10–120)")
+    role: str = Field("athlete", pattern="^(athlete|coach)$", description="Role: 'athlete' or 'coach'")
 
     @field_validator("name")
     @classmethod
@@ -18,7 +19,8 @@ class AthleteBase(BaseModel):
 
 
 class AthleteCreate(AthleteBase):
-    """Schema for creating an athlete – inherits all fields from AthleteBase."""
+    """Schema for creating an athlete – requires a password."""
+    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
 
 
 class AthleteUpdate(BaseModel):
@@ -41,3 +43,4 @@ class Athlete(AthleteBase):
 
     id: int
     created_at: datetime
+    role: str

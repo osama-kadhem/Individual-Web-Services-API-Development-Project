@@ -6,6 +6,7 @@ from app.schemas.athlete import Athlete, AthleteCreate, AthleteUpdate
 from app.schemas.sleep_log import SleepLog, SleepLogCreate
 from app.schemas.checkin import CheckIn, CheckInCreate
 from app.crud import crud_athlete, crud_sleep, crud_checkin
+from app.core.auth import get_current_user
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ router = APIRouter()
     },
 )
 def create_athlete(athlete: AthleteCreate, db: Session = Depends(get_db)):
-    db_athlete = crud_athlete.get_athlete_by_email(db, email=athlete.email)
+    db_athlete = crud_athlete.get_by_email(db, email=athlete.email)
     if db_athlete:
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud_athlete.create_athlete(db=db, athlete=athlete)
@@ -33,7 +34,7 @@ def create_athlete(athlete: AthleteCreate, db: Session = Depends(get_db)):
     summary="List all athletes",
     description="Returns a paginated list of all registered athletes.",
 )
-def list_athletes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_athletes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     return crud_athlete.get_athletes(db, skip=skip, limit=limit)
 
 
@@ -43,7 +44,7 @@ def list_athletes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
     summary="Get an athlete by ID",
     description="Retrieves a single athlete by their unique identifier.",
 )
-def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
+def get_athlete(athlete_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     db_athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not db_athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
@@ -56,7 +57,7 @@ def get_athlete(athlete_id: int, db: Session = Depends(get_db)):
     summary="Update an athlete",
     description="Updates an existing athlete profile.",
 )
-def update_athlete(athlete_id: int, athlete: AthleteUpdate, db: Session = Depends(get_db)):
+def update_athlete(athlete_id: int, athlete: AthleteUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     db_athlete = crud_athlete.update_athlete(db, athlete_id=athlete_id, athlete_update=athlete)
     if not db_athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
@@ -69,7 +70,7 @@ def update_athlete(athlete_id: int, athlete: AthleteUpdate, db: Session = Depend
     summary="Delete an athlete",
     description="Deletes an athlete and all associated data.",
 )
-def delete_athlete(athlete_id: int, db: Session = Depends(get_db)):
+def delete_athlete(athlete_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     success = crud_athlete.delete_athlete(db, athlete_id=athlete_id)
     if not success:
         raise HTTPException(status_code=404, detail="Athlete not found")
@@ -87,7 +88,7 @@ def delete_athlete(athlete_id: int, db: Session = Depends(get_db)):
         409: {"description": "Sleep log already exists for this date."},
     },
 )
-def create_athlete_sleep(athlete_id: int, sleep_in: SleepLogCreate, db: Session = Depends(get_db)):
+def create_athlete_sleep(athlete_id: int, sleep_in: SleepLogCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")
@@ -111,7 +112,7 @@ def create_athlete_sleep(athlete_id: int, sleep_in: SleepLogCreate, db: Session 
         409: {"description": "Check-in already exists for this date."},
     },
 )
-def create_athlete_checkin(athlete_id: int, checkin_in: CheckInCreate, db: Session = Depends(get_db)):
+def create_athlete_checkin(athlete_id: int, checkin_in: CheckInCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     athlete = crud_athlete.get_athlete(db, athlete_id=athlete_id)
     if not athlete:
         raise HTTPException(status_code=404, detail="Athlete not found")

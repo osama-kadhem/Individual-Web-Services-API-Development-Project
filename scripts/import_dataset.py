@@ -9,10 +9,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.db.session import SessionLocal
 from app.models.models import Athlete, Session as TrainingSession, SleepLog, CheckIn
+from app.core.auth import get_password_hash
 
 def import_kaggle_dataset(file_path: str):
     print(f"🚀 Integrating REAL Kaggle Dataset: {file_path}")
     db = SessionLocal()
+    
+    # Default password for all imported athletes
+    default_hashed_password = get_password_hash("ironmind2026")
     
     try:
         # Clear existing data to avoid confusion with the real dataset
@@ -35,6 +39,8 @@ def import_kaggle_dataset(file_path: str):
                     athlete = Athlete(
                         name=f"Athlete {row['Athlete_ID']}",
                         email=athlete_email,
+                        hashed_password=default_hashed_password,
+                        role="athlete",
                         age=25
                     )
                     db.add(athlete)
