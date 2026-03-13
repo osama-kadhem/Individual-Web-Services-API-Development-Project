@@ -28,5 +28,8 @@ limits==4.2
 httpx==0.28.1
 anyio==4.12.1
 
+# Deployment — ASGI to WSGI adapter (for PythonAnywhere)
+a2wsgi==1.10.8
+
 # Testing
 pytest==8.4.2
