@@ -52,8 +52,15 @@ The dashboard integrates **Chart.js** to visualize the **14-day training load di
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ 3. Technical Implementation & Rationale
 
+**Python + FastAPI**: Python's numerical ecosystem suits the ACWR calculation. FastAPI 0.128 was chosen over Flask/Django for three reasons: (1) Pydantic v2 with Annotated field constraints (e.g. `Field(ge=0, le=10)` for RPE) enforces strict domain-valid input at the gateway; (2) native async support handles concurrent requests; (3) automatic OpenAPI (Swagger/ReDoc) generation satisfies the documentation requirement. Additional libraries of note: `python-jose` for JWT token signing and verification, `Passlib` (bcrypt) for password hashing, and `slowapi` for rate limiting.
+
+**SQLite + SQLAlchemy 2.0 ORM**: SQLite provides zero-configuration portability for a self-contained project. The ORM abstraction is database-agnostic: migrating to PostgreSQL requires only a connection-string change in the `.env` file.
+
+**Deployment + Config**: Hosted on PythonAnywhere at [osamakadhem.pythonanywhere.com](https://osamakadhem.pythonanywhere.com) (Access Key: `ironmind_secret_2026`). Interactive Swagger console: [https://osamakadhem.pythonanywhere.com/docs](https://osamakadhem.pythonanywhere.com/docs); reference ReDoc: `/redoc`; health check: `/health`. All configuration (`DATABASE_URL`, `API_KEY`, `CORS_ORIGINS`) is managed via a `.env` file that is explicitly listed in `.gitignore`, keeping secrets out of source control. The database file (`.db`, `.sqlite`) is also gitignored. The API is designed to be agent-ready: its consistent JSON schema and standardised error envelope make it a natural candidate for wrapping as an MCP server.
+
+### 📂 Directory Structure
 ```text
 ├── app/
 │   ├── api/
@@ -124,6 +131,15 @@ Integrated logic is supported by the following sports science consensus and data
 *   📘 **[User Manual](docs/USER_MANUAL.md)**: Feature walkthrough and API guide.
 *   📕 **[API Reference](https://osamakadhem.pythonanywhere.com/redoc)**: Technical endpoint definitions.
 *   🧪 **[Test Suite](tests/test_integration.py)**: Evidence of 40 passing integration tests.
+
+## 🤖 8. Generative AI Declaration and Reflection
+
+| Tool | Used For | How Verified / What I Changed |
+| :--- | :--- | :--- |
+| **Claude** (Anthropic) | Initial architecture planning; three-tier structure design; docstring drafting; technical report writing and refinement | Architecture verified against FastAPI docs; all docstrings reviewed and condensed manually; report content verified against actual codebase before submission |
+| **Google Gemini** | Live API fuzzing audit; endpoint gap analysis; MCP wrapper design; training-prescription logic | All audit findings re-tested in integration suite (T-04–T-11); three new endpoints implemented and verified manually |
+
+GenAI was used as a structured audit partner, not merely for code completion. Gemini was given direct access to the live API and identified three concrete weaknesses: missing Pydantic bounds on age and sleep hours, an ACWR inflation vector from multiple daily sessions, and a missing score floor at ACWR above 2.0. Each finding was independently verified with an integration test before the fix was applied; the three new endpoints were specified by the audit and implemented by me. The ACWR calculation was written independently and verified against known load values in **T-09**.
 
 ---
 *© 2026 IronMind High-Performance Systems · Designed for COM3011 Web Services*
